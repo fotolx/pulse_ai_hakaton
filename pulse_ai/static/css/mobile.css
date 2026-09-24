@@ -1,0 +1,94 @@
+@media (max-width: 760px) {
+  html, body { width: 100%; overflow-x: hidden; }
+  body { min-height: 100dvh; }
+  .workspace { min-width: 0; }
+
+  .header__top { position: relative; display: block; padding-inline: 0; }
+  .header__mobile-bar { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 12px; }
+  .header__mobile-title { font-size: 14px; font-weight: 600; }
+  .header__menu-toggle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 36px; border: 1px solid #b9cedc; border-radius: 4px; background: #fff; }
+  .header__menu-toggle span { display: block; width: 17px; height: 2px; border-radius: 2px; background: #30627f; }
+  .header__navigation { display: none; position: absolute; z-index: 20; top: 44px; left: 8px; right: 8px; width: auto; overflow: visible; border: 1px solid #cbd9e1; border-radius: 6px; background: white; box-shadow: 0 8px 20px #00283d30; }
+  .header__navigation--open { display: block; }
+  .header__links { display: block; width: 100%; padding: 4px; }
+  .header__links li { display: block; }
+  .header__link { width: 100%; min-height: 42px; padding-inline: 12px; border: 0; border-radius: 3px; text-align: left; }
+  .header__link--active { background: #edf7fd; }
+  .header__session { display: flex; width: 100%; min-height: 32px; margin: 0; padding: 3px 12px; gap: 6px 12px; border-top: 1px solid #e9eff3; font-size: 11px; }
+  .header__operator { margin: 0; }
+  .header__handover { margin-left: auto; padding-inline: 8px; font-size: 11px; }
+  .header__bottom { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 8px 6px; }
+  .header__bottom > nav { min-width: 0; overflow: visible; }
+  .header__areas { width: 100%; flex-wrap: wrap !important; gap: 0 2px; }
+  .header__area-link { min-height: 28px; white-space: normal; line-height: 18px; }
+  .header__actions { justify-content: flex-end; flex-wrap: wrap; gap: 6px; width: 100%; margin-left: 0; }
+  .header__map-modes { margin-right: auto; }
+  .header__map-mode { min-height: 36px; padding-inline: 10px; }
+  .header__icon-button { width: 38px; height: 38px; flex-shrink: 0; }
+
+  .dashboard, .scheme-dashboard { min-width: 0; min-height: 0; width: 100%; }
+  .dashboard__map, .dashboard__metrics, .scheme-dashboard__stage, .scheme-dashboard__metrics { min-width: 0; width: 100%; }
+  .dashboard .network-map__controls, .scheme-board__controls { right: 6px; padding: 2px; border-radius: 5px; }
+  .dashboard .network-map__controls button, .scheme-board__controls button { width: 32px; height: 32px; font-size: 19px; }
+  .dashboard .network-map__controls .network-map__zoom-value, .scheme-board__controls .network-map__zoom-value { height: 23px; font-size: 9px; }
+  .dashboard .network-map__controls svg, .scheme-board__controls svg { width: 14px; height: 14px; }
+  .network-map__legend { right: 8px; bottom: 10px; }
+  .district-map-warning { bottom: 10px; max-width: calc(100% - 75px); }
+  .scheme-dashboard__controls { top: calc((100% - 106px) / 2); }
+
+  .metrics { max-height: min(31dvh, 240px); overflow-x: hidden; overflow-y: auto; }
+  .metrics__groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; min-width: 0; }
+  .metrics__group { min-width: 0; max-width: none; border-bottom: 1px solid #ccd9e2; }
+  .metrics__group:nth-child(3) { grid-column: 1 / -1; min-width: 0; }
+  .metrics__heading { font-size: 12px; }
+  .metrics__list { min-height: 58px; flex-wrap: wrap; justify-content: flex-start; gap: 10px 16px; }
+  .metrics__group:nth-child(3) .metrics__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .metrics__label { font-size: 11px; white-space: normal; }
+  .metrics__value { font-size: 16px; }
+
+  .equipment__tree { max-height: 190px; padding: 12px 16px; }
+  .equipment__station { margin-bottom: 12px; }
+  .equipment__main { padding: 16px 12px; }
+  .equipment__toolbar { align-items: flex-start; }
+  .equipment__toolbar > div { width: 100%; }
+  .equipment__button { min-height: 38px; }
+  .equipment__photos { margin-bottom: 20px; }
+  .equipment__summary-section { padding: 18px 14px; }
+
+  .node-popup, .node-viewer, .forecast, .handover, .equipment__viewer, .notice {
+    box-sizing: border-box;
+    width: calc(100vw - 16px);
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    padding: 16px;
+  }
+  .node-viewer__scheme, .node-viewer__photo { max-height: 55dvh; }
+  .forecast__scroll { overflow-x: hidden; }
+  .forecast__table:not([hidden]), .forecast__table tbody { display: block; width: 100%; min-width: 0; }
+  .forecast__table colgroup, .forecast__table thead { display: none; }
+  .forecast__table tbody tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 10px; border: 1px solid #d7e2e8; border-radius: 6px; overflow: hidden; }
+  .forecast__table .forecast__number { display: none; }
+  .forecast__table .forecast__label { grid-column: 1 / -1; min-width: 0; padding: 8px; }
+  .forecast__type > span { min-width: 0; white-space: normal; }
+  .forecast__table .forecast__cell { min-width: 0; }
+  .forecast__table .forecast__cell::before { display: block; padding-top: 5px; color: #71838d; font-size: 11px; content: '1 ч'; }
+  .forecast__table .forecast__cell:nth-child(4)::before { content: '6 ч'; }
+  .forecast__table .forecast__cell:nth-child(5)::before { content: '24 ч'; }
+  .forecast__table .forecast__detail { display: block; padding: 8px; }
+  .forecast__table .forecast__detail .forecast__label { height: auto; padding: 0; border: 0; }
+  .forecast__table .forecast__target { display: block; height: auto; padding: 8px 0 0; border: 0; }
+  .alarm-toast-stack { top: 8px; right: 8px; width: min(400px, calc(100vw - 16px)); max-width: none; padding: 4px; }
+}
+
+@media (max-width: 420px) {
+  .header__clock { font-size: 10px; }
+  .header__operator { font-size: 10px; }
+  .header__handover { font-size: 10px; }
+  .node-popup__media { grid-template-columns: 100px minmax(0, 1fr); }
+  .node-popup__horizons { gap: 6px; }
+  .node-popup__actions { grid-template-columns: 1fr; }
+  .equipment__photos img, .equipment__photo-empty { height: 120px; }
+  .equipment__sensor-group dl > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .equipment__summary dl { gap: 14px 10px; }
+  .metrics__group:nth-child(3) .metrics__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
