@@ -1,0 +1,14 @@
+services:
+  web:
+    build:
+      context: .
+    image: ${COMPOSE_PROJECT_NAME:-app}-web:latest
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - infrastructure_backend
+
+networks:
+  infrastructure_backend:
+    external: true

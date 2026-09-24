@@ -1,0 +1,9 @@
+services:
+  web:
+    ports:
+      - "8126:8126"
+    volumes:
+      - ./pulse_ai:/usr/src/app
+    environment:
+      DEBUG: "True"
+    command: python3 manage.py runserver 0.0.0.0:8126
