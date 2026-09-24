@@ -1,0 +1,9 @@
+{
+  "name": "moscow-collector-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Сервис прогнозирования аварий инженерных коллекторов Москвы",
+  "scripts": { "start": "node scripts/serve.mjs", "dev": "node scripts/serve.mjs", "bridge": "node --watch scripts/arrival-server.mjs" },
+  "engines": { "node": ">=20" }
+}
