@@ -1,0 +1,56 @@
+.events { flex: 1; width: 100%; min-width: 0; min-height: 0; overflow-y: auto; background: #fff; color: #303741; font-size: 13px; }
+.events__toolbar { display: flex; align-items: center; flex-wrap: nowrap; gap: 5px; min-height: 44px; padding: 5px 12px 5px 36px; border-bottom: 1px solid #dde2e8; }
+.events__search { display: flex; align-items: center; flex: 0 1 190px; gap: 5px; min-width: 155px; min-height: 34px; padding: 0 10px; border: 1px solid #d8dce6; border-radius: 9px; background: #fafafe; color: #87909d; }
+.events__search-icon { flex: 0 0 16px; width: 16px; height: 16px; color: #626b76; }
+.events__search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 12px; }
+.events__types, .events__periods { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.events__types button, .events__periods button { min-height: 33px; padding: 0 12px; border: 1px solid #d9dce5; border-radius: 9px; background: #f8f8fc; color: #4d525c; white-space: nowrap; font-size: 12px; }
+.events__types button[aria-pressed="true"] { border-color: #2868c7; background: #2868c7; color: white; font-weight: 600; }
+.events__count { margin-left: auto; white-space: nowrap; font-size: 13px; }
+.events__open { display: flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer; font-size: 12px; }
+.events__open input { position: absolute; opacity: 0; }
+.events__switch { width: 35px; height: 19px; border-radius: 12px; background: #e8eaf0; transition: background .15s; }
+.events__switch::before { content: ''; display: block; width: 15px; height: 15px; margin: 2px; border-radius: 50%; background: white; box-shadow: 0 1px 3px #0002; transition: transform .15s; }
+.events__open input:checked + .events__switch { background: #2868c7; }
+.events__open input:checked + .events__switch::before { transform: translateX(16px); }
+.events__open input:focus-visible + .events__switch { outline: 2px solid #2868c7; outline-offset: 2px; }
+.events__periods { gap: 0; padding: 3px; border-radius: 9px; background: #f0f0f3; }
+.events__periods button { min-height: 27px; padding: 0 11px; border: 0; border-radius: 6px; background: transparent; }
+.events__periods button[aria-pressed="true"] { background: white; color: #252b34; box-shadow: 0 1px 3px #0001; font-weight: 600; }
+.events__dates:not([hidden]) { display: flex; gap: 8px; align-items: center; }
+.events__dates label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.events__dates input { max-width: 130px; min-height: 30px; border: 1px solid #d9dce5; border-radius: 5px; }
+.events__range { display: none; }
+.events__toolbar > .header__actions { flex-shrink: 0; gap: 4px; margin-left: auto; }
+.events__toolbar > .header__actions .header__icon-button { width: 30px; height: 30px; }
+@media (max-width: 1450px) and (min-width: 1251px) {
+  .events__toolbar { gap: 4px; padding-right: 10px; }
+  .events__search { flex-basis: 175px; min-width: 150px; }
+  .events__types, .events__periods { gap: 4px; }
+  .events__types button, .events__periods button { padding-inline: 8px; }
+  .events__periods button { padding-inline: 6px; }
+}
+.events__head, .events__row { display: grid; grid-template-columns: 66px 96px 116px 96px 106px 106px minmax(230px,1fr) 216px 84px; align-items: center; column-gap: 0; }
+.events__head { padding: 15px 20px 15px 40px; color: #6d7582; text-transform: uppercase; font-size: 11px; font-weight: 600; }
+.events__day { margin: 13px 20px 6px 40px; font-size: 13px; color: #626a78; font-weight: 600; }
+.events__row { min-height: 30px; margin: 0 24px 0 40px; border-bottom: 1px solid #eceef3; }
+.events__row > span, .events__row > time { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.events__time, .events__collector, .events__area, .events__okrug, .events__source { color: #8d939d; }
+.events__picket a { color: #2467c8; font-weight: 600; text-decoration: none; }
+.events__picket a:hover { text-decoration: underline; }
+.events__type { justify-self: start; min-width: 90px; box-sizing: border-box; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.events__type--alarm { background: #fceaea; color: #c54b40; }
+.events__type--access { background: #eaf0ff; color: #3865bb; }
+.events__type--forecast { background: #fbeee3; color: #c07932; }
+.events__type--connection { background: #f1f1f7; color: #85899a; }
+.events__type--maintenance { background: #eaf8ef; color: #63a27b; }
+.events__type--shift { background: #f0ecff; color: #8062bb; }
+.events__type--decision { background: #edf5ff; color: #6595c9; }
+.events__status--open { color: #c73730; font-weight: 600; }
+.events__status--closed { color: #65a27e; }
+.events__status--other { color: #a2a7b0; }
+.events__empty { padding: 36px 20px; text-align: center; color: #737d89; }
+@media (max-width: 1250px) { .events__count { margin-left: 0; } .events__head, .events__row { grid-template-columns: 60px 90px 110px 90px 55px 100px minmax(180px,1fr) 160px 80px; } }
+@media (max-width: 1250px) { .events__toolbar { flex-wrap: wrap; } .events__toolbar > .header__actions { margin-left: auto; } }
+@media (max-width: 1000px) { .events__head { display: none; } .events__row { display: grid; grid-template-columns: 62px 100px 100px minmax(0,1fr) 100px; gap: 5px 8px; padding: 9px 0; } .events__collector, .events__area, .events__okrug { display: none; } .events__description { grid-column: 1 / -2; white-space: normal !important; } .events__source { grid-column: 1 / -2; font-size: 11px; } .events__status { grid-column: 5; grid-row: 1; } }
+@media (max-width: 760px) { .events__toolbar { padding: 10px 12px; gap: 10px; } .events__search { flex: 1 1 100%; width: auto; } .events__types { width: 100%; overflow-x: auto; padding-bottom: 3px; } .events__types button { min-height: 36px; } .events__count { order: 3; } .events__open { order: 4; margin-left: auto; } .events__periods { order: 5; width: 100%; justify-content: space-between; } .events__periods button { flex: 1; } .events__dates { order: 6; flex-wrap: wrap; } .events__day { margin: 17px 12px 7px; } .events__row { grid-template-columns: 48px minmax(0,1fr) auto; gap: 5px 7px; margin: 0 12px; padding: 11px 0; } .events__time { grid-column: 1; grid-row: 1; } .events__picket { grid-column: 2; grid-row: 1; } .events__type { grid-column: 1 / 3; grid-row: 2; min-width: 0; } .events__description { grid-column: 1 / -1; grid-row: 3; } .events__source { grid-column: 1 / -1; grid-row: 4; } .events__status { grid-column: 3; grid-row: 1; } }

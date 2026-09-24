@@ -1,0 +1,10 @@
+.workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dashboard { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.dashboard__map { min-height: 0; min-width: 0; }
+.district-map-page { flex: 1; min-height: 0; min-width: 0; }
+.district-map-page .network-map--scheme { background: #fff; }
+.network-map--scheme .network-map__background { visibility: hidden; }
+.district-map-warning { position: absolute; left: 20px; bottom: 20px; z-index: 1; max-width: calc(100% - 110px); padding: 3px 8px; border: 1px solid #e8bf55; border-radius: 4px; background: #fff9e7; color: #98701b; font-size: 10px; line-height: 14px; pointer-events: none; }
+@media (max-width: 640px) { .district-map-warning { left: 12px; bottom: 12px; max-width: calc(100% - 100px); } }
+
+.dashboard__metrics { min-width: 0; }
