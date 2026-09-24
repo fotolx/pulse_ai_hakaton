@@ -1,0 +1,11 @@
+export function arrivalNotification(item) {
+  const date = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', dateStyle: 'short', timeStyle: 'medium' });
+  return {
+    id: `arrival:${item.id}`,
+    title: 'Специалист прибыл на узел',
+    description: `${item.technicianName} · ${item.position}\n${item.nodeName} · ${item.district}\nРаботы: ${item.task}\nПрибытие: ${date.format(new Date(item.arrivedAt))} (МСК)`,
+    createdAt: item.arrivedAt,
+    severity: 'info',
+    readAt: null,
+  };
+}

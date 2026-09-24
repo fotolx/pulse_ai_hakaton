@@ -1,0 +1,126 @@
+.alarm-toast {
+  box-sizing: border-box;
+  width: 360px;
+  max-width: 100%;
+  padding: 14px 16px 14px 17px;
+  border-left: 3px solid #e43e36;
+  border-radius: 4px;
+  background: #fff;
+  color: #00283d;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 20%);
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.alarm-toast__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.alarm-toast__dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e43e36;
+}
+
+.alarm-toast__title {
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.alarm-toast__time {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #71838d;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.alarm-toast__description {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.alarm-toast__details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #f65359;
+  color: #fff;
+  font: inherit;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.alarm-toast__details svg {
+  flex-shrink: 0;
+}
+
+.alarm-toast__details:hover {
+  background: #e4444b;
+}
+
+.alarm-toast__details:focus-visible {
+  outline: 2px solid #00283d;
+  outline-offset: 3px;
+}
+
+.alarm-toast-stack {
+  position: fixed;
+  right: 20px;
+  top: 100px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.alarm-toast-stack .alarm-toast {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.alarm-toast--arrival {
+  border-left-color: #34b866;
+}
+
+.alarm-toast--arrival .alarm-toast__dot {
+  background: #34b866;
+}
+
+.alarm-toast--arrival .alarm-toast__description {
+  white-space: pre-line;
+}
+
+.alarm-toast--arrival .alarm-toast__details {
+  background: #34b866;
+}
+
+.alarm-toast-stack__connection {
+  padding: 8px 12px;
+  border: 1px solid #dedede;
+  border-radius: 6px;
+  background: #fff;
+  color: #71838d;
+  font-size: 12px;
+}

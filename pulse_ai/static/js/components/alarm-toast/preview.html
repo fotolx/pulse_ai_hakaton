@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Тост-уведомление · новая тревога</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <link rel="stylesheet" href="./alarm-toast.css">
+  <style>
+    body { margin: 0; padding: 14px 20px 26px; background: #fff; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import { createAlarmToast } from './alarm-toast.js';
+    document.body.append(createAlarmToast());
+  </script>
+</body>
+</html>

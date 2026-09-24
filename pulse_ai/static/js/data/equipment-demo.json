@@ -1,0 +1,518 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-18T16:34:12+03:00",
+  "stations": [
+    {
+      "id": "pervomayskaya",
+      "name": "ПС «Первомайская»",
+      "pickets": [
+        {
+          "id": "107",
+          "photos": [
+            "./img/nodes/node-103.jpg"
+          ],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [
+            {
+              "id": "smoke",
+              "name": "Дымовой датчик",
+              "displayValue": "Обнаружен дым",
+              "severity": "danger",
+              "group": "key",
+              "chart": {
+                "min": 0,
+                "max": 100,
+                "unit": "%",
+                "history": [
+                  {
+                    "hour": -24,
+                    "value": 8
+                  },
+                  {
+                    "hour": -6,
+                    "value": 12
+                  },
+                  {
+                    "hour": -1,
+                    "value": 16
+                  },
+                  {
+                    "hour": 0,
+                    "value": 18
+                  }
+                ],
+                "forecast": [
+                  {
+                    "hour": 1,
+                    "value": 32
+                  },
+                  {
+                    "hour": 6,
+                    "value": 57
+                  },
+                  {
+                    "hour": 24,
+                    "value": 78
+                  }
+                ]
+              }
+            },
+            {
+              "id": "gas",
+              "name": "Газоанализатор (CH4)",
+              "displayValue": "12% НКПР",
+              "severity": "normal",
+              "group": "key",
+              "chart": {
+                "min": 0,
+                "max": 100,
+                "unit": "% НКПР",
+                "history": [
+                  {
+                    "hour": -24,
+                    "value": 3
+                  },
+                  {
+                    "hour": -6,
+                    "value": 5
+                  },
+                  {
+                    "hour": -1,
+                    "value": 2
+                  },
+                  {
+                    "hour": 0,
+                    "value": 2
+                  }
+                ],
+                "forecast": [
+                  {
+                    "hour": 1,
+                    "value": 7
+                  },
+                  {
+                    "hour": 6,
+                    "value": 4
+                  },
+                  {
+                    "hour": 24,
+                    "value": 2
+                  }
+                ]
+              }
+            },
+            {
+              "id": "temperature",
+              "name": "Датчик температуры",
+              "displayValue": "34.2 °C",
+              "severity": "normal",
+              "group": "key",
+              "chart": {
+                "min": 0,
+                "max": 180,
+                "unit": "°C",
+                "history": [
+                  {
+                    "hour": -24,
+                    "value": 32
+                  },
+                  {
+                    "hour": -6,
+                    "value": 39
+                  },
+                  {
+                    "hour": -1,
+                    "value": 28
+                  },
+                  {
+                    "hour": 0,
+                    "value": 34.2
+                  }
+                ],
+                "forecast": [
+                  {
+                    "hour": 1,
+                    "value": 38
+                  },
+                  {
+                    "hour": 6,
+                    "value": 43
+                  },
+                  {
+                    "hour": 24,
+                    "value": 32
+                  }
+                ]
+              }
+            },
+            {
+              "id": "water",
+              "name": "Датчик затопления",
+              "displayValue": "Сухо",
+              "severity": "normal",
+              "group": "key",
+              "chart": {
+                "min": 0,
+                "max": 100,
+                "unit": "см",
+                "history": [
+                  {
+                    "hour": -24,
+                    "value": 0
+                  },
+                  {
+                    "hour": -6,
+                    "value": 0
+                  },
+                  {
+                    "hour": -1,
+                    "value": 0
+                  },
+                  {
+                    "hour": 0,
+                    "value": 0
+                  }
+                ],
+                "forecast": [
+                  {
+                    "hour": 1,
+                    "value": 3
+                  },
+                  {
+                    "hour": 6,
+                    "value": 0
+                  },
+                  {
+                    "hour": 24,
+                    "value": 0
+                  }
+                ]
+              }
+            },
+            {
+              "id": "contact",
+              "name": "Контактный датчик (люк/дверь)",
+              "displayValue": "Не замкнут",
+              "severity": "normal",
+              "group": "key",
+              "chart": {
+                "min": 0,
+                "max": 3,
+                "unit": "",
+                "history": [
+                  {
+                    "hour": -24,
+                    "value": 0
+                  },
+                  {
+                    "hour": -6,
+                    "value": 0
+                  },
+                  {
+                    "hour": -1,
+                    "value": 1
+                  },
+                  {
+                    "hour": 0,
+                    "value": 1
+                  }
+                ],
+                "forecast": [
+                  {
+                    "hour": 1,
+                    "value": 0
+                  },
+                  {
+                    "hour": 6,
+                    "value": 0
+                  },
+                  {
+                    "hour": 24,
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "id": "additional-0",
+              "name": "Ручной извещатель",
+              "displayValue": "Не активирован",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-1",
+              "name": "Датчик фазы",
+              "displayValue": "231 В, норма",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-2",
+              "name": "Датчик уровня (приямок)",
+              "displayValue": "0 см",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-3",
+              "name": "Состояние вентилятора",
+              "displayValue": "Работает",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-4",
+              "name": "Режим насоса",
+              "displayValue": "Основной",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-5",
+              "name": "Тепловой извещатель",
+              "displayValue": "Норма",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-6",
+              "name": "ИБП",
+              "displayValue": "Есть питание",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-7",
+              "name": "Объёмный датчик (движение)",
+              "displayValue": "Не обнаружено",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-8",
+              "name": "Переключатель (вент.)",
+              "displayValue": "Вкл",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-9",
+              "name": "Переключатель (диспетчер)",
+              "displayValue": "Норма",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-10",
+              "name": "Состояние насоса (осн.)",
+              "displayValue": "Работает",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-11",
+              "name": "Реле состояния",
+              "displayValue": "Норма",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-12",
+              "name": "Датчик метана",
+              "displayValue": "Норма",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            },
+            {
+              "id": "additional-13",
+              "name": "Резервный насос",
+              "displayValue": "Резерв, ожидание",
+              "severity": "normal",
+              "group": "additional",
+              "chart": null
+            }
+          ],
+          "summary": {
+            "totalSensors": 19,
+            "accuracy": 0.58,
+            "sections": [
+              {
+                "title": "Текущая тревога",
+                "badge": "ВЫСОКИЙ",
+                "tone": "danger",
+                "fields": [
+                  {
+                    "label": "Дата",
+                    "value": "18.09.2026"
+                  },
+                  {
+                    "label": "Время",
+                    "value": "16:34:12"
+                  },
+                  {
+                    "label": "Событие",
+                    "value": "Обнаружен дым"
+                  },
+                  {
+                    "label": "Источник",
+                    "value": "Дымовой датчик"
+                  }
+                ]
+              },
+              {
+                "title": "События за 24 часа",
+                "badge": "2",
+                "tone": "neutral",
+                "fields": [
+                  {
+                    "label": "Время",
+                    "value": "15:58"
+                  },
+                  {
+                    "label": "Тип",
+                    "value": "Пожарный риск"
+                  },
+                  {
+                    "label": "Ложных",
+                    "value": "1"
+                  },
+                  {
+                    "label": "Подтв. выездом",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "title": "Ближайший прогноз риска",
+                "badge": "61%",
+                "tone": "warning",
+                "fields": [
+                  {
+                    "label": "Тип",
+                    "value": "Пожар / Потоп"
+                  },
+                  {
+                    "label": "Горизонт",
+                    "value": "24 часа"
+                  },
+                  {
+                    "label": "Вероятность",
+                    "value": "Высокая"
+                  },
+                  {
+                    "label": "Тренд",
+                    "value": "Растет"
+                  }
+                ]
+              },
+              {
+                "title": "Максимум за период",
+                "badge": "ПОЖАР ⓘ",
+                "tone": "danger",
+                "fields": [
+                  {
+                    "label": "Дата",
+                    "value": "03.09.2026"
+                  },
+                  {
+                    "label": "Горизонт",
+                    "value": "30 дней"
+                  },
+                  {
+                    "label": "Вероятность",
+                    "value": "86%"
+                  },
+                  {
+                    "label": "Исход",
+                    "value": "Подтв. выездом"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "108",
+          "photos": [],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [],
+          "summary": {
+            "totalSensors": 0,
+            "accuracy": null,
+            "sections": []
+          }
+        },
+        {
+          "id": "109",
+          "photos": [],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [],
+          "summary": {
+            "totalSensors": 0,
+            "accuracy": null,
+            "sections": []
+          }
+        },
+        {
+          "id": "110",
+          "photos": [],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [],
+          "summary": {
+            "totalSensors": 0,
+            "accuracy": null,
+            "sections": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "schelkovskaya",
+      "name": "ПС «Щелковская»",
+      "pickets": [
+        {
+          "id": "201",
+          "photos": [],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [],
+          "summary": {
+            "totalSensors": 0,
+            "accuracy": null,
+            "sections": []
+          }
+        },
+        {
+          "id": "202",
+          "photos": [],
+          "videoUrl": null,
+          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "sensors": [],
+          "summary": {
+            "totalSensors": 0,
+            "accuracy": null,
+            "sections": []
+          }
+        }
+      ]
+    }
+  ]
+}
