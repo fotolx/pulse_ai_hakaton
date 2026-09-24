@@ -1,9 +1,12 @@
 @import url('./fonts.css');
 @import url('./base.css');
-@import url('../js/components/header/header.css');
+@import url('./mobile.css');
+
 @import url('./pages/workspace.css');
 @import url('./pages/scheme.css');
 @import url('./pages/events.css');
+
+@import url('../js/components/header/header.css');
 @import url('../js/components/network-map/network-map.css');
 @import url('../js/components/network-map/node-popup.css');
 @import url('../js/components/metrics/metrics.css');
@@ -12,4 +15,5 @@
 @import url('../js/components/notifications/notifications.css');
 @import url('../js/components/forecast/forecast.css');
 @import url('../js/components/alarm-toast/alarm-toast.css');
-@import url('./mobile.css');
+
+
