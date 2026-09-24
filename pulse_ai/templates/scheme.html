@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="ru">
 
@@ -7,10 +8,10 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Схема сети ПС Первомайская">
   <title>ПС «Первомайская» — Схема — Инженерные коллекторы Москвы</title>
-  <link rel="icon" type="image/png" href="img/icons/favicon.png">
-  <link rel="stylesheet" href="./css/normalize.css">
-  <link rel="stylesheet" href="./css/main.css">
-  <script type="module" src="./js/app.js"></script>
+  <link rel="icon" type="image/png" href="{% static 'img/icons/favicon.png' %}">
+  <link rel="stylesheet" href="{% static 'css/normalize.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <script type="module" src="{% static 'js/app.js' %}"></script>
 </head>
 
 <body data-page="scheme">
