@@ -165,7 +165,7 @@ export default {
       const rect = frame.getBoundingClientRect();
       zoomAt(scale*(action === 'in' ? 1.25 : 1/1.25),rect.left+rect.width/2,rect.top+rect.height/2);
     }, { signal:controller.signal });
-    const modes = document.createElement('div'); modes.className = 'header__map-modes'; modes.setAttribute('role','group'); modes.setAttribute('aria-label','Вид карты'); modes.innerHTML = '<a class="header__map-mode" href="./pickets.html" aria-label="Карта">Карта</a><span class="header__map-mode" aria-current="page">Схема</span>'; document.querySelector('#header-root .header__actions').prepend(modes);
+    const modes = document.createElement('div'); modes.className = 'header__map-modes'; modes.setAttribute('role','group'); modes.setAttribute('aria-label','Вид карты'); modes.innerHTML = '<a class="header__map-mode" href="/pickets/" aria-label="Карта">Карта</a><span class="header__map-mode" aria-current="page">Схема</span>'; document.querySelector('#header-root .header__actions').prepend(modes);
     const areas = document.querySelector('#header-root .header__areas'); const item = document.createElement('li'); item.className = 'header__area'; item.innerHTML = '<span class="header__area-link header__area-link--active" aria-current="page">ПС «Первомайская»</span>'; areas.append(item);
     return () => { controller.abort(); observer.disconnect(); metrics.destroy(); modes.remove(); item.remove(); };
   },
