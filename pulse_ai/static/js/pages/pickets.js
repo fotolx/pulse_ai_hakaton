@@ -28,7 +28,7 @@ export default {
       const button = event.target.closest('[data-map-mode]');
       if (!button) return;
       if (button.dataset.mapMode === 'scheme') {
-        location.href = new URL('./scheme.html', location.href).href;
+        location.href = new URL('/scheme/', location.href).href;
         return;
       }
       surface.classList.toggle('network-map--scheme', false);
