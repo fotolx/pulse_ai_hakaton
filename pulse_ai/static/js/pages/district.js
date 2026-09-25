@@ -12,7 +12,7 @@ export default {
     warning.className = 'district-map-warning';
     warning.textContent = '⚠ Координаты условные — демонстрационная схема, без привязки к реальной геодезии';
     root.querySelector('.network-map').append(warning);
-    const openPickets = () => { location.href = new URL('./pickets.html', location.href).href; };
+    const openPickets = () => { location.href = new URL('/pickets/', location.href).href; };
     root.addEventListener('network:incident-select', openPickets);
     const metrics = mountMetrics(root.querySelector('[data-metrics]'), dashboardMetrics);
     const update = event => metrics.update(event.detail);
