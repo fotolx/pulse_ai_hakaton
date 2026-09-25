@@ -46,7 +46,7 @@ const notificationService = createDemoNotificationsService();
 const notifications = mountNotifications({
   trigger: document.querySelector('[data-notifications-trigger]'),
   service: notificationService,
-  onOpenJournal() { location.href = new URL('./events.html', location.href); },
+  onOpenJournal() { location.href = new URL('/events/', location.href); },
 });
 notifications.setItems(notificationService.snapshot());
 const arrivalToasts = mountArrivalToasts({
