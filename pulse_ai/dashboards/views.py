@@ -47,3 +47,58 @@ class RisksValuesView(View):
             "message": "Настройки сохранены успешно.",
             }
         return HttpResponse(json.dumps(result), content_type="application/json", status=200)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class TasksView(View):
+    def get(self, request, *args, **kwargs):
+        tasks = {
+  "items": [
+    {
+      "id": "task-107-001",
+      "technicianName": "Иванов Иван",
+      "position": "Техник",
+      "nodeId": "107",
+      "nodeName": "Узел 107",
+      "district": "Первомайский",
+      "task": "Плановое ТО",
+      "closedAt": "2026-09-25T08:15:00.000Z",
+      "statusMap": {
+        "door": "norm",
+        "smoke": "norm",
+        "temp": "norm",
+        "motion": "norm",
+        "gas": "norm",
+        "ups": "fault"
+      },
+      "checklist": [
+        { "id": "door", "label": "КД Дверь", "status": "norm" },
+        { "id": "ups", "label": "ИБП", "status": "fault" }
+      ],
+      "comment": "ИБП требует замены батареи",
+      "photos": [],
+      "receivedAt": "2026-09-25T08:15:03.000Z"
+    }
+  ]
+}      
+        return HttpResponse(serialize("json", [tasks]), content_type="application/json", status=200)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ArrivalsView(View):
+    def get(self, request, *args, **kwargs):
+        arrivals = {
+  "items": [
+    {
+      "id": "arrival-107-001",
+      "technicianName": "Иванов Иван",
+      "position": "Техник",
+      "nodeId": "107",
+      "nodeName": "Узел 107",
+      "district": "Первомайский",
+      "task": "Плановое ТО",
+      "arrivedAt": "2026-09-25T07:30:00.000Z",
+      "receivedAt": "2026-09-25T07:30:02.000Z"
+    }
+  ]
+}    
+        return HttpResponse(serialize("json", [arrivals]), content_type="application/json", status=200)
