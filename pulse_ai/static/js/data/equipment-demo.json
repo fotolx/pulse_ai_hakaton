@@ -9,10 +9,10 @@
         {
           "id": "107",
           "photos": [
-            "/img/nodes/node-103.jpg"
+            "/static/img/nodes/node-103.jpg"
           ],
           "videoUrl": null,
-          "schemeUrl": "./img/map/TonnelOkrug.svg",
+          "schemeUrl": "/static/img/map/TonnelOkrug.svg",
           "sensors": [
             {
               "id": "smoke",
