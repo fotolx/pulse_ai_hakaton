@@ -89,7 +89,7 @@ export default {
         const [collector,area] = district(row.picket);
         return `${heading}<article class="events__row">
           <time class="events__time" datetime="${row.date}T${row.time}">${row.time}</time>
-          <span class="events__picket">${row.picket ? `<a href="./pickets.html">Пикет ${escapeHTML(row.picket)}</a>` : '—'}</span>
+          <span class="events__picket">${row.picket ? `<a href="/pickets/">Пикет ${escapeHTML(row.picket)}</a>` : '—'}</span>
           <span class="events__collector">${row.picket ? collector : '—'}</span><span class="events__area">${row.picket ? area : '—'}</span><span class="events__okrug">${row.picket ? 'ВАО' : '—'}</span>
           <span class="events__type events__type--${typeClass[row.type]}">${row.type}</span><span class="events__description">${escapeHTML(row.description)}</span>
           <span class="events__source">${escapeHTML(row.source)}</span><span class="events__status events__status--${row.status === 'Открыто' ? 'open' : row.status === 'Закрыто' ? 'closed' : 'other'}">${row.status}</span>
