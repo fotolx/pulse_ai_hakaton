@@ -48,7 +48,7 @@ class RisksValuesView(View):
             }
         return HttpResponse(json.dumps(result), content_type="application/json", status=200)
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class TasksView(View):
     def get(self, request, *args, **kwargs):
         tasks = {
@@ -83,7 +83,7 @@ class TasksView(View):
         return HttpResponse(serialize("json", [tasks]), content_type="application/json", status=200)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class ArrivalsView(View):
     def get(self, request, *args, **kwargs):
         arrivals = {
