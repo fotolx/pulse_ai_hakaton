@@ -9,8 +9,8 @@ export function mountHeader(root, { onNotice }) {
         <nav class="header__navigation" id="header-navigation" aria-label="Основные разделы">
           <ul class="header__links">
             <li><a class="header__link" data-section="overview" href="/index.html#/district">Обзор/Карта</a></li>
-            <li><a class="header__link" href="/events.html" data-section="events">Журнал событий</a></li>
-            <li><a class="header__link" href="/equipment.html" data-section="equipment">Реестр оборудования</a></li>
+            <li><a class="header__link" href="/events/" data-section="events">Журнал событий</a></li>
+            <li><a class="header__link" href="/equipment/" data-section="equipment">Реестр оборудования</a></li>
             <li><button class="header__link" type="button" data-notice="forecast" aria-haspopup="dialog" aria-controls="forecast-dialog">Прогноз инцидентов</button></li>
           </ul>
         </nav>
@@ -24,8 +24,8 @@ export function mountHeader(root, { onNotice }) {
         <nav aria-label="Масштаб обзора">
           <ul class="header__areas">
             <li class="header__area"><span class="header__area-link" aria-disabled="true">Город</span></li>
-            <li class="header__area"><a class="header__area-link" href="/index.html#/district/" data-route="/district">Административный округ</a></li>
-            <li class="header__area"><a class="header__area-link" href="/pickets.html" data-route="/pickets">Район</a></li>
+            <li class="header__area"><a class="header__area-link" href="/index#/district/" data-route="/district">Административный округ</a></li>
+            <li class="header__area"><a class="header__area-link" href="/pickets/" data-route="/pickets">Район</a></li>
           </ul>
         </nav>
         <div class="header__actions" role="group" aria-label="Инструменты">
