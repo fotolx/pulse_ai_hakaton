@@ -80,7 +80,7 @@ class TasksView(View):
     }
   ]
 }      
-        return HttpResponse(serialize("json", [tasks]), content_type="application/json", status=200)
+        return JsonResponse(tasks, status=200)
 
 
 # @method_decorator(csrf_exempt, name='dispatch')
@@ -101,4 +101,4 @@ class ArrivalsView(View):
     }
   ]
 }    
-        return HttpResponse(serialize("json", [arrivals]), content_type="application/json", status=200)
+        return JsonResponse(arrivals, status=200)
