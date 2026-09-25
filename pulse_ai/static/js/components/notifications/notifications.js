@@ -21,7 +21,7 @@ export function mountNotifications({ trigger, service, onOpenJournal }) {
     <p class="notifications__status" role="status" hidden></p>
     <button class="notifications__retry" type="button" hidden>Повторить загрузку</button>
     <ul class="notifications__list" aria-label="Последние уведомления"></ul>
-    <footer class="notifications__footer"><a class="notifications__journal" href="./events.html">Журнал событий <span aria-hidden="true">→</span></a></footer>`;
+    <footer class="notifications__footer"><a class="notifications__journal" href="/events/">Журнал событий <span aria-hidden="true">→</span></a></footer>`;
   document.body.append(panel);
   trigger.setAttribute('popovertarget', panel.id);
   trigger.setAttribute('aria-controls', panel.id);
