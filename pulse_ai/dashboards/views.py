@@ -42,6 +42,8 @@ class RisksValuesView(View):
         return HttpResponse(serialize("json", [risks]), content_type="application/json", status=200)
     
     def post(self, request, *args, **kwargs):
+        if request.POST.get("id") is None:
+            return HttpResponse("Bad request", status=400)
         result = {
             "status": "Success",
             "message": "Настройки сохранены успешно.",
@@ -82,6 +84,14 @@ class TasksView(View):
 }      
         return JsonResponse(tasks, status=200)
 
+    def post(self, request, *args, **kwargs):
+        result = {
+            "id": request.POST.get("id"),
+            "status": "Success",
+            "message": "Задача закрыта успешно.",
+            }
+        return HttpResponse(json.dumps(result), content_type="application/json", status=200)
+
 
 # @method_decorator(csrf_exempt, name='dispatch')
 class ArrivalsView(View):
@@ -102,3 +112,13 @@ class ArrivalsView(View):
   ]
 }    
         return JsonResponse(arrivals, status=200)
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("id") is None:
+            return HttpResponse("Bad request", status=400)
+        result = {
+            "id": request.POST.get("id"),
+            "status": "Success",
+            "message": "Прибытие сохранено успешно.",
+            }
+        return HttpResponse(json.dumps(result), content_type="application/json", status=200)
