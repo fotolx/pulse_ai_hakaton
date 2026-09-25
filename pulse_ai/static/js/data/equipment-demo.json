@@ -9,7 +9,7 @@
         {
           "id": "107",
           "photos": [
-            "./img/nodes/node-103.jpg"
+            "/img/nodes/node-103.jpg"
           ],
           "videoUrl": null,
           "schemeUrl": "./img/map/TonnelOkrug.svg",
