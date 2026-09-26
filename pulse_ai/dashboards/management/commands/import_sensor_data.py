@@ -206,6 +206,19 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Состояния: читаю {len(df)} строк из {path}")
 
+        before = len(df)
+        df = df.drop_duplicates(
+            subset=["тип_датчика", "ид_набор_состояний", "название_состояния"]
+        )
+        dropped = before - len(df)
+        if dropped:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  В справочнике состояний {dropped} дублирующихся строк "
+                    f"(одинаковые тип_датчика + ид_набор_состояний + название_состояния) — пропущены"
+                )
+            )
+
         states = [
             SensorState(
                 sensor_type=row["тип_датчика"],
