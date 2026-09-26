@@ -8,7 +8,7 @@ export function mountForecast({ service, onOpenPicket, onNotify, onCreateRequest
   dialog.innerHTML = `
     <header class="forecast__header">
       <h2 class="forecast__title" id="forecast-title" tabindex="-1">Прогноз инцидентов</h2>
-      <p class="forecast__threshold" hidden>Порог уверенности <span class="forecast__confidence"></span></p>
+      <p class="forecast__threshold" hidden>ТОЧНОСТЬ МОДЕЛИ <span class="forecast__confidence">0.58</span></p>
       <button class="forecast__close" type="button" aria-label="Закрыть прогноз инцидентов" title="Закрыть">×</button>
     </header>
     <p class="forecast__status" role="status" hidden></p>
