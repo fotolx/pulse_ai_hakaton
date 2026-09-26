@@ -54,7 +54,8 @@ export default {
       const activeStation = current()?.station;
       tree.innerHTML = (activeStation ? [activeStation] : []).map(station => {
         const available = new Map(station.pickets.map(picket => [picket.id, picket]));
-        const pickets = designPicketIds.map(id => available.get(id) || { id, unavailable: true }).filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
+        const menuIds = [...new Set([...designPicketIds, ...available.keys()])].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
+        const pickets = menuIds.map(id => available.get(id) || { id, unavailable: true }).filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
         if (!pickets.length) return '';
         return `<section class="equipment__station"><h2>${escape(station.name)}</h2>${pickets.map(picket => {
           const key = selectionKey(station, picket), open = expanded.has(key);
@@ -88,8 +89,9 @@ export default {
       if (snapshot && Date.parse(data.updatedAt) < Date.parse(snapshot.updatedAt)) return;
       snapshot = data;
       if (!current()) {
-        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === "104"));
-        selected = station ? selectionKey(station, station.pickets.find(picket => picket.id === "104")) : null;
+        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === '104')) || snapshot.stations.find(item => item.pickets.length);
+        const picket = station?.pickets.find(item => item.id === '104') || station?.pickets[0];
+        selected = station && picket ? selectionKey(station, picket) : null;
         if (selected) expanded.add(selected);
       }
       status.textContent = '';
