@@ -2,21 +2,20 @@ import { prepareMainScheme } from './main-scheme.js';
 import { createMapExtension } from './map-background.js';
 import { mountLegend } from '../legend/legend.js';
 import { mountMapTooltip } from './map-tooltip.js';
-const mapUrl = new URL('../../../img/map/MainCity.svg', import.meta.url);
-const systemUrl = new URL('../../../img/map/MainTonnel.svg', import.meta.url);
+const systemUrl = new URL('../../../img/map/map.svg', import.meta.url);
 
-// MainCity and MainTonnel have different export bounds. The background offset
-// matches the design in scheme coordinates, so it stays aligned at every zoom.
+// The main map includes its background. Other screens can still supply
+// separate background and scheme assets with their own export bounds.
 export function mountNetworkMap(root, {
-  backgroundUrl = mapUrl, schemeUrl = systemUrl, schemeTransform = '',
-  label = 'Карта инженерных коллекторов административного округа', viewWidth = 1920, viewHeight = 980, viewY = 0, backgroundWidth = 1995, backgroundHeight = 1068, backgroundX = -6, backgroundY = 21, fit = 'cover',
+  backgroundUrl = null, schemeUrl = systemUrl, schemeTransform = '',
+  label = 'Карта инженерных коллекторов административного округа', viewWidth = 1920, viewHeight = 994, viewY = 0, backgroundWidth = 1995, backgroundHeight = 1068, backgroundX = -6, backgroundY = 21, fit = 'cover',
   prepareScheme = prepareMainScheme, extendBackground = false,
 } = {}) {
   const controller = new AbortController();
   root.innerHTML = `<section class="network-map" aria-label="${label}">
     <div class="network-map__viewport" tabindex="0" role="region" aria-label="Интерактивная карта коллекторов. Масштабируйте колесиком мыши или захватывайте для перемещения.">
       <svg class="network-map__canvas" viewBox="0 ${viewY} ${viewWidth} ${viewHeight}" preserveAspectRatio="xMidYMid meet" aria-label="Схема коллекторов. Красные точки — инциденты.">
-        <image class="network-map__background" href="${backgroundUrl}" x="${backgroundX}" y="${backgroundY}" width="${backgroundWidth}" height="${backgroundHeight}" preserveAspectRatio="none" aria-hidden="true" />
+        ${backgroundUrl ? `<image class="network-map__background" href="${backgroundUrl}" x="${backgroundX}" y="${backgroundY}" width="${backgroundWidth}" height="${backgroundHeight}" preserveAspectRatio="none" aria-hidden="true" />` : ''}
         <g class="network-map__system" transform="${schemeTransform}" fill="none"></g>
       </svg>
     </div>
