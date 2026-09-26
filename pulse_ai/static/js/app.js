@@ -5,6 +5,7 @@ import pickets from './pages/pickets.js';
 import equipment from './pages/equipment.js';
 import scheme from './pages/scheme.js';
 import { mountForecast } from './components/forecast/forecast.js';
+import { mountModelSettings } from './components/model-settings/model-settings.js';
 import { createDemoForecastService } from './services/forecast.js';
 import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
@@ -18,6 +19,7 @@ import events from './pages/events.js?v=date-filters-2';
 
 const handover = mountHandover();
 const forecast = mountForecast({ service: createDemoForecastService() });
+const modelSettings = mountModelSettings();
 
 const routes = new Map([['/', home], ['/district', district], ['/pickets', pickets], ['/equipment', equipment], ['/scheme', scheme], ['/events', events]]);
 document.querySelector('.skip-link').addEventListener('click', event => {
@@ -25,13 +27,16 @@ document.querySelector('.skip-link').addEventListener('click', event => {
   document.querySelector('#main').focus();
 });
 const notices = {
-  settings: ['Настройки', 'Настройки сервиса недоступны.'],
   fullscreen: ['Полноэкранный режим', 'Браузер не разрешил переход в полноэкранный режим.'],
 };
 const header = mountHeader(document.querySelector('#header-root'), {
   onNotice(key) {
     if (key === 'forecast') { forecast.open(); return; }
     if (key === 'handover') { handover.open(); return; }
+    if (key === 'settings') {
+      modelSettings.open(document.activeElement);
+      return;
+    }
     const [title, text] = notices[key];
     document.querySelector('#notice-title').textContent = title;
     document.querySelector('#notice-text').textContent = text;
