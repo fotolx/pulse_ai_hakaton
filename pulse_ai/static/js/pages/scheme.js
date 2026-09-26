@@ -21,18 +21,12 @@ const gauge = (label,angle) => `<div class="scheme-board__gauge"><svg viewBox="0
 export default {
   title: 'ПС «Первомайская» — Схема',
   render: () => `<h1 class="visually-hidden">Схема ПС «Первомайская»</h1><section class="scheme-board" aria-label="Схема сети ПС «Первомайская»"><div class="scheme-board__frame"><div class="scheme-board__size"><div class="scheme-board__surface">
-    <img class="scheme-board__art" src="/static/img/map/Shema-2.svg" alt="Схема тоннеля и пикетов 103, 104 и 105"><h2 class="scheme-board__title">ПС «Первомайская»</h2><img class="scheme-board__station" src="/static/img/icons/stanciya.svg" alt="Подстанция Первомайская">
+    <img class="scheme-board__art" src="./img/map/Shema-2.svg" alt="Схема тоннеля и пикетов 103, 104 и 105"><h2 class="scheme-board__title">ПС «Первомайская»</h2><img class="scheme-board__station" src="./img/icons/stanciya.svg" alt="Подстанция Первомайская">
     <aside class="scheme-board__sidebar" aria-label="Электрика подстанции"><div class="scheme-board__readings"><div><b>НАГРУЗКА, %</b><small>план&nbsp;&nbsp;&nbsp; факт</small><strong data-station="load">70&nbsp;&nbsp; 62</strong></div><div><b>НАПРЯЖЕНИЕ, кВ</b><small>план&nbsp;&nbsp;&nbsp; факт</small><strong data-station="voltage">10.5&nbsp; 10.5</strong></div></div><div class="scheme-board__electric"><b>Электрика ПС</b>${gauge('Напряжение · 10.5 кВ',-12)}${gauge('Загрузка · 62%',27)}${gauge('Темп. трансф. · 41 °C',-45)}</div></aside>
     <div class="scheme-board__temperatures" aria-label="Температура линии">${[238,415,591,768,944].map((x,i) => `<span data-line="line-${i+1}" style="left:${x}px"></span>`).join('')}</div>
     <div class="scheme-board__sensors" aria-label="Текущие показания датчиков">${sensorPositions.map(([id,x,y,width,align]) => `<span class="scheme-board__sensor scheme-board__sensor--${align}" style="left:${x}px;top:${y}px;width:${width}px"><b data-sensor-label="${id}"></b><small data-sensor-value="${id}"></small></span>`).join('')}</div>
-    <a class="scheme-board__picket scheme-board__picket--103" href="./pickets.html" aria-label="Пикет № 103"></a><a class="scheme-board__picket scheme-board__picket--104" href="./pickets.html" aria-label="Пикет № 104"></a><a class="scheme-board__picket scheme-board__picket--105" href="./pickets.html" aria-label="Пикет № 105"></a>
+    <a class="scheme-board__picket scheme-board__picket--103" href="/pickets/" aria-label="Пикет № 103"></a><a class="scheme-board__picket scheme-board__picket--104" href="/pickets/" aria-label="Пикет № 104"></a><a class="scheme-board__picket scheme-board__picket--105" href="/pickets/" aria-label="Пикет № 105"></a>
   </div></div></div>
-  <div class="network-map__controls scheme-board__controls" role="group" aria-label="Масштаб схемы">
-    <button type="button" data-scheme-control="in" aria-label="Увеличить масштаб" title="Увеличить масштаб">+</button>
-    <button type="button" class="network-map__zoom-value" data-scheme-control="reset" aria-label="Вернуть исходный масштаб" title="Вернуть исходный вид">100%</button>
-    <button type="button" data-scheme-control="out" aria-label="Уменьшить масштаб" title="Уменьшить масштаб">−</button>
-    <button type="button" data-scheme-control="expand" aria-label="Развернуть схему" title="Развернуть схему" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5-6 6M3 3l6 6m12-6-6 6M3 21l6-6m12 6-6-6"/></svg></button>
-  </div>
   <p class="scheme-board__status" role="status" hidden></p>
   <div class="scheme-board__metrics" data-metrics></div>
   </section>`,
@@ -41,7 +35,6 @@ export default {
     const frame = board.querySelector('.scheme-board__frame');
     const size = board.querySelector('.scheme-board__size');
     const surface = board.querySelector('.scheme-board__surface');
-    const controls = board.querySelector('.scheme-board__controls');
     const status = board.querySelector('.scheme-board__status');
     const metrics = mountMetrics(board.querySelector('[data-metrics]'), schemeMetrics, { generalTitle: 'Общие по ПС «Первомайская»' });
     const controller = new AbortController();
@@ -91,80 +84,14 @@ export default {
         signal: controller.signal,
       });
     }
-    let scale = 1;
-    let fitScale = 1;
-    let initialScale = 1;
-    const applyScale = () => {
+    const observer = new ResizeObserver(() => {
+      const scale = Math.min((frame.clientWidth-2)/canvasWidth,(frame.clientHeight-2)/canvasHeight);
+      if (!Number.isFinite(scale) || scale <= 0) return;
       size.style.width = `${canvasWidth*scale}px`;
       size.style.height = `${canvasHeight*scale}px`;
       surface.style.transform = `scale(${scale})`;
-      controls.querySelector('[data-scheme-control="reset"]').textContent = `${Math.round(scale/initialScale*100)}%`;
-      controls.querySelector('[data-scheme-control="out"]').disabled = scale <= fitScale + 0.001;
-      controls.querySelector('[data-scheme-control="in"]').disabled = scale >= 3;
-    };
-    const observer = new ResizeObserver(() => {
-      const nextFit = Math.min((frame.clientWidth-2)/canvasWidth,(frame.clientHeight-2)/canvasHeight);
-      if (!Number.isFinite(nextFit) || nextFit <= 0) return;
-      const nextInitial = nextFit;
-      scale = Math.min(3,Math.max(nextFit,scale*nextInitial/initialScale));
-      fitScale = nextFit;
-      initialScale = nextInitial;
-      applyScale();
     });
     observer.observe(frame);
-    const zoomAt = (nextScale,clientX,clientY) => {
-      nextScale = Math.min(3,Math.max(fitScale,nextScale));
-      if (Math.abs(nextScale-scale) < 0.001) return;
-      const rect = frame.getBoundingClientRect();
-      const x = clientX-rect.left;
-      const y = clientY-rect.top;
-      const logicalX = (frame.scrollLeft+x)/scale;
-      const logicalY = (frame.scrollTop+y)/scale;
-      scale = nextScale;
-      applyScale();
-      frame.scrollLeft = logicalX*scale-x;
-      frame.scrollTop = logicalY*scale-y;
-    };
-    frame.addEventListener('wheel', event => {
-      event.preventDefault();
-      zoomAt(scale*(event.deltaY < 0 ? 1.16 : 1/1.16),event.clientX,event.clientY);
-    }, { passive:false, signal:controller.signal });
-    frame.addEventListener('dblclick', event => {
-      event.preventDefault();
-      zoomAt(scale*1.5,event.clientX,event.clientY);
-    }, { signal:controller.signal });
-    let drag = null;
-    frame.addEventListener('pointerdown', event => {
-      if (event.target.closest('a') || event.pointerType === 'mouse' && event.button !== 0) return;
-      drag = { id:event.pointerId, x:event.clientX, y:event.clientY, left:frame.scrollLeft, top:frame.scrollTop };
-      frame.setPointerCapture(event.pointerId);
-      frame.classList.add('scheme-board__frame--dragging');
-    }, { signal:controller.signal });
-    frame.addEventListener('pointermove', event => {
-      if (!drag || drag.id !== event.pointerId) return;
-      frame.scrollLeft = drag.left+drag.x-event.clientX;
-      frame.scrollTop = drag.top+drag.y-event.clientY;
-    }, { signal:controller.signal });
-    const stopDrag = event => {
-      if (!drag || drag.id !== event.pointerId) return;
-      drag = null;
-      frame.classList.remove('scheme-board__frame--dragging');
-      if (frame.hasPointerCapture(event.pointerId)) frame.releasePointerCapture(event.pointerId);
-    };
-    frame.addEventListener('pointerup',stopDrag,{ signal:controller.signal });
-    frame.addEventListener('pointercancel',stopDrag,{ signal:controller.signal });
-    controls.addEventListener('click',event => {
-      const action = event.target.closest('[data-scheme-control]')?.dataset.schemeControl;
-      if (!action) return;
-      if (action === 'expand') {
-        board.classList.toggle('scheme-board--expanded');
-        controls.querySelector('[data-scheme-control="expand"]').setAttribute('aria-pressed',String(board.classList.contains('scheme-board--expanded')));
-        return;
-      }
-      if (action === 'reset') { scale = initialScale; applyScale(); frame.scrollLeft = 0; frame.scrollTop = 0; return; }
-      const rect = frame.getBoundingClientRect();
-      zoomAt(scale*(action === 'in' ? 1.25 : 1/1.25),rect.left+rect.width/2,rect.top+rect.height/2);
-    }, { signal:controller.signal });
     const modes = document.createElement('div'); modes.className = 'header__map-modes'; modes.setAttribute('role','group'); modes.setAttribute('aria-label','Вид карты'); modes.innerHTML = '<a class="header__map-mode" href="/pickets/" aria-label="Карта">Карта</a><span class="header__map-mode" aria-current="page">Схема</span>'; document.querySelector('#header-root .header__actions').prepend(modes);
     const areas = document.querySelector('#header-root .header__areas'); const item = document.createElement('li'); item.className = 'header__area'; item.innerHTML = '<span class="header__area-link header__area-link--active" aria-current="page">ПС «Первомайская»</span>'; areas.append(item);
     return () => { controller.abort(); observer.disconnect(); metrics.destroy(); modes.remove(); item.remove(); };
