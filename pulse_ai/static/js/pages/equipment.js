@@ -36,6 +36,9 @@ export default {
     const viewer = root.querySelector('dialog');
     const crumb = document.createElement('li');
     crumb.className = 'header__area equipment__breadcrumb';
+    const crumbLabel = document.createElement('span');
+    crumbLabel.className = 'header__area-link header__area-link--active';
+    crumb.append(crumbLabel);
     document.querySelector('.header__areas').append(crumb);
     let snapshot, selected = null, charts = [], request, timer, generation = 0;
     const expanded = new Set();
@@ -54,8 +57,7 @@ export default {
       const activeStation = current()?.station;
       tree.innerHTML = (activeStation ? [activeStation] : []).map(station => {
         const available = new Map(station.pickets.map(picket => [picket.id, picket]));
-        const menuIds = [...new Set([...designPicketIds, ...available.keys()])].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
-        const pickets = menuIds.map(id => available.get(id) || { id, unavailable: true }).filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
+        const pickets = designPicketIds.map(id => available.get(id) || { id, unavailable: true }).filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
         if (!pickets.length) return '';
         return `<section class="equipment__station"><h2>${escape(station.name)}</h2>${pickets.map(picket => {
           const key = selectionKey(station, picket), open = expanded.has(key);
@@ -68,9 +70,9 @@ export default {
     function renderPicket() {
       disposeCharts();
       const active = current();
-      if (!active) { content.innerHTML = '<p class="equipment__empty">В реестре пока нет оборудования.</p>'; summary.replaceChildren(); crumb.textContent = ''; return; }
+      if (!active) { content.innerHTML = '<p class="equipment__empty">В реестре пока нет оборудования.</p>'; summary.replaceChildren(); crumbLabel.textContent = ''; return; }
       const { station, picket } = active;
-      crumb.textContent = station.name;
+      crumbLabel.textContent = station.name;
       content.innerHTML = `<div class="equipment__toolbar"><h1>Пикет № ${escape(picket.id)}</h1><div><button type="button" class="equipment__button equipment__button--outline">Подключиться к видео <span aria-hidden="true">◉</span></button><button type="button" class="equipment__button">Открыть мнемокарту <span aria-hidden="true">↗</span></button></div></div>
         <div class="equipment__photos">${picket.photos.map((photo, index) => `<button type="button" data-photo="${index}" aria-label="Открыть фото ${index + 1} пикета ${escape(picket.id)}"><img src="${escape(photo)}" alt="Коллектор · пикет ${escape(picket.id)}" width="200" height="165"></button>`).join('')}${picket.photos.length < 2 ? '<div class="equipment__photo-empty"><span aria-hidden="true">▧</span><span>Фото не загружено</span></div>' : ''}</div>
         <div class="equipment__columns"><section class="equipment__live"><h2>Реальное время</h2>${sensorGroup(picket.sensors, 'key', 'Ключевые датчики')}${sensorGroup(picket.sensors, 'additional', 'Дополнительные датчики')}</section>
