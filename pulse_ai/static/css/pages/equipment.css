@@ -137,7 +137,54 @@ body[data-page="equipment"] *::-webkit-scrollbar-thumb:hover { background: #8da1
 .equipment__search { margin-bottom: 14px; }
 .equipment__search label { height: 28px; }
 .equipment__branches button { min-height: 24px; padding-block: 2px; }
-@media (min-width: 1151px) { .equipment { grid-template-columns: 338px minmax(560px, 1fr) 310px; } .equipment__tree { padding: 16px 20px; } }
+@media (min-width: 1151px) { .equipment { grid-template-columns: 270px minmax(560px, 1fr) 310px; } .equipment__tree { padding: 16px 20px; } }
+
+/* Compact desktop layout follows the supplied 1308 × 676 registry design. */
+@media (min-width: 1151px) and (max-width: 1500px) {
+  .equipment h1, .equipment h2 { font-size: 13px; line-height: 18px; }
+  .equipment__tree { padding: 17px 20px; }
+  .equipment__search { gap: 6px; margin-bottom: 10px; }
+  .equipment__search label { height: 22px; padding-inline: 7px; }
+  .equipment__search label > svg { width: 14px; height: 14px; }
+  .equipment__search input { padding-left: 5px; font-size: 10px; }
+  .equipment__search > button { width: 16px; height: 22px; flex-basis: 16px; }
+  .equipment__search > button svg { width: 13px; height: 13px; }
+  .equipment__tree .equipment__station h2 { margin-bottom: 2px; font-size: 12px; line-height: 18px; }
+  .equipment__node { min-height: 19px; gap: 5px; }
+  .equipment__toggle { width: 12px; height: 12px; font-size: 10px; line-height: 9px; }
+  .equipment__select, .equipment__branches button { padding-block: 1px; font-size: 12px !important; }
+  .equipment__branch:not(:last-child)::before { left: 5px; top: 16px; bottom: -3px; }
+  .equipment__branches { margin-left: 5px; padding: 0 0 1px 27px; }
+  .equipment__branches button { min-height: 18px; }
+  .equipment__branches button::before { left: -16px; width: 14px; }
+  .equipment__main { padding: 18px 30px 16px 24px; }
+  .equipment__toolbar { margin-bottom: 13px; }
+  .equipment__toolbar > div { gap: 10px; }
+  .equipment__button { min-height: 22px; padding: 4px 13px; font-size: 8px !important; }
+  .equipment__button span { margin-left: 8px; }
+  .equipment__photos { gap: 5px; margin-bottom: 25px; }
+  .equipment__photos img, .equipment__photo-empty { width: 135px; height: 111px; }
+  .equipment__photo-empty { font-size: 9px; }
+  .equipment__live { padding-right: 26px; }
+  .equipment__live > h2 { margin-bottom: 20px; }
+  .equipment__sensor-group { margin-bottom: 18px; }
+  .equipment__sensor-group h3 { margin-bottom: 4px; font-size: 10px; line-height: 15px; }
+  .equipment__sensor-group dl > div { grid-template-columns: 1.4fr 1fr; gap: 8px; margin-bottom: 3px; font-size: 10px; line-height: 14px; }
+  .equipment__forecast { padding-left: 26px; }
+  .equipment__forecast h2 { margin-bottom: 17px; }
+  .equipment__legend { margin-bottom: 9px; font-size: 7px; }
+  .equipment__charts { gap: 29px; }
+  .equipment__chart figcaption { min-height: 15px; margin-bottom: 3px; font-size: 10px; }
+  .equipment__reading { font-size: 9px; }
+  .equipment__plot { height: 34px; }
+  .equipment__axis { padding-top: 2px; font-size: 6px; }
+  .equipment__summary { padding-top: 29px; }
+  .equipment__overview { margin: 0 10px 8px; padding: 8px 8px 10px; }
+  .equipment__summary dl { gap: 18px 14px; padding: 13px 8px 0; font-size: 10px; line-height: 14px; }
+  .equipment__summary-section { padding: 17px 16px 18px; }
+  .equipment__summary-section dl { padding-top: 18px; }
+  .equipment__badge { padding: 3px 5px; font-size: 8px; }
+}
 
 /* Desktop spacing follows the supplied 1920 × 1080 registry layout. */
 @media (min-width: 1501px) {
