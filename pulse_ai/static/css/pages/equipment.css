@@ -142,7 +142,7 @@ body[data-page="equipment"] *::-webkit-scrollbar-thumb:hover { background: #8da1
 .equipment__branches button { min-height: 24px; padding-block: 2px; }
 @media (min-width: 1151px) {
   .equipment { grid-template-columns: 390px minmax(0, 1fr) clamp(330px, 23.65vw, 454px); }
-  .equipment__tree { padding: 16px 14px; }
+  .equipment__tree { padding: 16px 14px 16px 22px }
   .equipment__summary { min-width: 0; }
 }
 
