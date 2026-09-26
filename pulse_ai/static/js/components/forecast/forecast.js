@@ -62,7 +62,7 @@ export function mountForecast({ service, onOpenPicket, onNotify, onCreateRequest
   function render() {
     body.replaceChildren();
     threshold.hidden = false;
-    dialog.querySelector('.forecast__confidence').textContent = `${Math.round(snapshot.confidenceThreshold * 100)}%`;
+    dialog.querySelector('.forecast__confidence').textContent = `0.58%`;
     table.hidden = snapshot.rows.length === 0;
     status.hidden = snapshot.rows.length > 0;
     status.textContent = 'Прогнозов пока нет';
