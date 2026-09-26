@@ -44,5 +44,5 @@
 .scheme-pending { width: 432px; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 42px 24px 40px; border: 1px solid #cbd6dd; border-radius: 8px; background: #fff; color: #00283d; text-align: center; box-shadow: 0 10px 24px rgb(0 0 0 / 14%); }
 .scheme-pending::backdrop { background: rgb(0 20 30 / 25%); }
 .scheme-pending img { display: block; margin: 0 auto 28px; }
-.scheme-pending h2 { margin: 0; font-size: 20px; line-height: 24px; font-weight: 600; }
+.scheme-pending h2 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 400; }
 .header__map-mode[aria-current="page"] { background: #fff; color: #00283d; box-shadow: 0 1px 3px rgb(15 34 48 / 10%); }
