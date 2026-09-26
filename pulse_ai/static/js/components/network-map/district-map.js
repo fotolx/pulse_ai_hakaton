@@ -9,6 +9,7 @@ const nodes = [
   ['301', 367.25, 655.25], ['302', 536.25, 646.25], ['303', 625.25, 738.25],
   ['304', 859.25, 744.25], ['305', 1301.25, 770.25],
 ];
+const popupNodeIds = new Set(['101', '102', '103', '105', '106', '107', '108', '109', '110', '201', '202', '301', '302', '303', '304', '305']);
 
 function prepareDistrictScheme(layer, { signal, canActivate }) {
   const artworkIn = (x, y, width, height) => [...layer.children].filter(element => {
@@ -42,9 +43,9 @@ function prepareDistrictScheme(layer, { signal, canActivate }) {
     group.setAttribute('role', 'button');
     group.setAttribute('aria-label', `Узел ${id}`);
     group.dataset.nodeId = id;
-    if (id === '107' || id === '103') {
+    if (popupNodeIds.has(id)) {
       group.setAttribute('aria-haspopup', 'dialog');
-      group.setAttribute('aria-controls', id === '107' ? 'district-node-popup' : 'district-node-popup-103');
+      group.setAttribute('aria-controls', `district-node-popup-${id}`);
       group.setAttribute('aria-expanded', 'false');
     }
     for (const element of artwork) {
