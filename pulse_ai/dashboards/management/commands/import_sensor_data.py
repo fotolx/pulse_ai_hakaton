@@ -68,9 +68,9 @@ class Command(BaseCommand):
             "--dir", default=".", help="Папка, где лежат CSV-файлы (по умолчанию текущая)"
         )
         parser.add_argument("--objects", default="справочник_объектов_диспетчер.csv")
-        parser.add_argument("--channels", default="справочник_каналов_датчиков_new.csv")
-        parser.add_argument("--states", default="справочник_состоянии_.csv")
-        parser.add_argument("--journal", default="journal_2025_unique.csv")
+        parser.add_argument("--channels", default="справочник_каналов_датчиков.csv")
+        parser.add_argument("--states", default="справочник_состояний.csv")
+        parser.add_argument("--journal", default="journal.csv")
         parser.add_argument(
             "--skip-dicts",
             action="store_true",
