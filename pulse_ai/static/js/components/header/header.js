@@ -29,7 +29,7 @@ export function mountHeader(root, { onNotice }) {
           </ul>
         </nav>
         <div class="header__actions" role="group" aria-label="Инструменты">
-          <button class="header__icon-button" type="button" aria-label="Настройки" title="Настройки" data-notice="settings">${icon('setting', 12, 12)}</button>
+          <button class="header__icon-button" type="button" aria-label="Настройки" title="Настройки" data-notice="settings" aria-haspopup="dialog" aria-controls="model-settings-dialog" > ${icon('setting', 12, 12)}</button>
           <button class="header__icon-button" type="button" aria-label="Печать" title="Печать" data-action="print">${icon('print', 10, 10)}</button>
           <button class="header__icon-button" type="button" aria-label="Полноэкранный режим" title="Полноэкранный режим" aria-pressed="false" data-action="fullscreen"><span class="header__fullscreen" aria-hidden="true"></span></button>
           <button class="header__icon-button header__icon-button--notification" type="button" aria-label="Уведомления" title="Уведомления" data-notifications-trigger>${icon('notification', 8, 10)}</button>
