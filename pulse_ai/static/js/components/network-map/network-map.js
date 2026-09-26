@@ -27,6 +27,12 @@ export function mountNetworkMap(root, {
   const viewport = root.querySelector('.network-map__viewport');
   const canvas = root.querySelector('.network-map__canvas');
   const tooltip = mountMapTooltip(root.querySelector('.network-map'), { signal: controller.signal, canOpen: () => true });
+  viewport.addEventListener('pointerdown', event => {
+    if (event.target.closest('.network-map__point')) return;
+    const focused = document.activeElement;
+    if (focused instanceof Element && viewport.contains(focused)) focused.blur();
+    tooltip.hide();
+  }, { signal: controller.signal });
   if (extendBackground) canvas.prepend(
     typeof extendBackground === 'function' ? extendBackground() : createMapExtension(),
   );
