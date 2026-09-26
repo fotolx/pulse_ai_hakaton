@@ -16,7 +16,7 @@ export default {
       ...alarmNodeIds.map(id => mountNodePopup(root, { node: districtNode(id, { alarm: true }) })),
     ];
     const openEquipment = event => {
-      if (event.detail?.nodeId === '104') location.href = new URL('./equipment.html', location.href).href;
+      if (event.detail?.nodeId === '104') location.href = new URL('/equipment/', location.href).href;
     };
     root.addEventListener('network:incident-select', openEquipment);
     const surface = root.querySelector('.network-map');
@@ -37,7 +37,7 @@ export default {
       const button = event.target.closest('[data-map-mode]');
       if (!button) return;
       if (button.dataset.mapMode === 'scheme') {
-        location.href = '/scheme.html';
+        location.href = '/scheme/';
         return;
       }
       surface.classList.toggle('network-map--scheme', false);
