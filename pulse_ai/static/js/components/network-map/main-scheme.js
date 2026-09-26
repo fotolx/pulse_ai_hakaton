@@ -2,11 +2,30 @@ const ns = 'http://www.w3.org/2000/svg';
 
 // Counts belong to the designer's markers, not to their visual radius.
 const incidents = new Map([
-  ['941.065,412.065', 2], ['188.065,692.065', 1],
-  ['887,413', 4], ['1665,457', 3],
+  ['941.065,391.065', 2], ['188.065,671.065', 1],
+  ['887,392', 4], ['1665,436', 3],
 ]);
 
 export function prepareMainScheme(layer, { signal, canActivate, tooltip }) {
+  // Each exported label is a background, border, information icon and outlined
+  // text. Keep the artwork intact and the hit area in its original coordinates.
+  layer.querySelectorAll('rect[fill="#E0EDFF"]').forEach((background, index) => {
+    const parts = [background];
+    for (let next = background.nextElementSibling; parts.length < 4 && next; next = next.nextElementSibling) parts.push(next);
+    const group = document.createElementNS(ns, 'g');
+    group.setAttribute('class', 'network-map__annotation');
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'img');
+    group.setAttribute('aria-label', `Информация об объекте ${index + 1}`);
+    const hit = background.cloneNode(false);
+    hit.setAttribute('fill', 'transparent');
+    hit.setAttribute('class', 'network-map__annotation-hit');
+    const content = document.createElementNS(ns, 'g');
+    content.setAttribute('class', 'network-map__annotation-content');
+    background.replaceWith(group);
+    content.append(...parts);
+    group.append(hit, content);
+  });
   // The exported legend is artwork; the fixed HTML legend provides interaction.
   layer.querySelector('g[filter="url(#filter0_d_2002_1284)"]')?.remove();
   const nodes = [...layer.querySelectorAll('circle[stroke="#334C7F"], path[stroke="#334C7F"]')];
