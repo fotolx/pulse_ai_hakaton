@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-echo "⏳ Ждём базу данных..."
-until python manage.py check --database default > /dev/null 2>&1; do
-  sleep 1
-done
-echo "✅ База данных доступна"
+# echo "⏳ Ждём базу данных..."
+# until python manage.py check --database default > /dev/null 2>&1; do
+#   sleep 1
+# done
+# echo "✅ База данных доступна"
 
-echo "🔄 Применяем миграции..."
-python manage.py migrate --noinput
+# echo "🔄 Применяем миграции..."
+# python manage.py migrate --noinput
 
 echo "🎨 Собираем статику..."
 case "$(echo "${DEBUG}" | tr '[:upper:]' '[:lower:]')" in
