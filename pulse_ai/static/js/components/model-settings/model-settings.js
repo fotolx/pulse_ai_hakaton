@@ -53,7 +53,17 @@ export function mountModelSettings() {
     sensitivityRange.value = String(normalized);
     sensitivityNumber.value = Number(normalized.toFixed(2)).toString();
   });
-  settings.querySelector('[data-train]').addEventListener('click', () => { settings.close(); auth.showModal(); auth.querySelector('h2').focus(); });
+  function openAuth(subtitle) {
+    auth.querySelector('.pulse-auth__subtitle').textContent = subtitle;
+    settings.close();
+    auth.showModal();
+    auth.querySelector('h2').focus();
+  }
+  settings.querySelector('[data-train]').addEventListener('click', () => openAuth('Дообучение модели'));
+  settings.querySelector('form').addEventListener('submit', event => {
+    event.preventDefault();
+    openAuth('Сохранение порогов');
+  });
   toggle.addEventListener('click', () => { const open = toggle.getAttribute('aria-expanded') === 'true'; toggle.setAttribute('aria-expanded', String(!open)); sensorList.hidden = open; });
   sensorList.addEventListener('click', e => { const tag=e.target.closest('.model-settings__tag'); if(!tag)return; const active=tag.getAttribute('aria-pressed')!=='true'; tag.setAttribute('aria-pressed',String(active)); tag.classList.toggle('model-settings__tag--active',active); });
   textarea.addEventListener('input', () => { counter.value = textarea.value.length || 56; });
