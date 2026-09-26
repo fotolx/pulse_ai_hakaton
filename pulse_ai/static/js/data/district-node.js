@@ -33,3 +33,8 @@ export const districtNode103 = {
     { name: 'ИБП', value: 'Много неисправных', alert: true },
   ],
 };
+
+export function districtNode(id, { alarm = false } = {}) {
+  const template = alarm ? districtNode103 : districtNode107;
+  return { ...template, id: String(id) };
+}
