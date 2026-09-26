@@ -9,6 +9,8 @@ const icon = name => ({
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 14V4M4.5 7.5 8 4l3.5 3.5"/></svg>',
 }[name] || '');
 const designPicketIds = ['101', '102', '103', '104', '105', '106'];
+// Demo assets are relative to the static bundle, not to /equipment/ on Django.
+const mediaUrl = value => value?.startsWith('./img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
 export default {
   title: 'Реестр оборудования',
   render: () => `<div class="equipment">
@@ -89,7 +91,11 @@ export default {
     }
     function accept(data) {
       if (snapshot && Date.parse(data.updatedAt) < Date.parse(snapshot.updatedAt)) return;
-      snapshot = data;
+      snapshot = { ...data, stations: data.stations.map(station => ({ ...station,
+        pickets: station.pickets.map(picket => ({ ...picket,
+          photos: picket.photos.map(mediaUrl), schemeUrl: mediaUrl(picket.schemeUrl), videoUrl: mediaUrl(picket.videoUrl),
+        })),
+      })) };
       if (!current()) {
         const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === '104')) || snapshot.stations.find(item => item.pickets.length);
         const picket = station?.pickets.find(item => item.id === '104') || station?.pickets[0];
