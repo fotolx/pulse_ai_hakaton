@@ -23,6 +23,12 @@ import pickle
 import os
 import joblib
 import json
+from django.core.paginator import Paginator
+from django.utils.dateparse import parse_date
+from .models import SensorEvent
+
+PAGE_SIZE_DEFAULT = 500
+PAGE_SIZE_MAX = 5000
 
 def mobile(request):
     return render(request, 'mobile.html')   
@@ -122,3 +128,134 @@ class ArrivalsView(View):
             "message": "Прибытие сохранено успешно.",
             }
         return HttpResponse(json.dumps(result), content_type="application/json", status=200)
+
+def _parse_bool(value):
+    if value is None:
+        return None
+    return value.strip().lower() in ("1", "true", "yes", "да")
+
+
+def _serialize_events(queryset):
+    return [
+        {
+            "source_event_id": event.source_event_id,
+            "occurred_at": event.occurred_at.isoformat(),
+            "channel_id": event.channel_id,
+            "sensor_name": event.channel.sensor_name,
+            "sensor_type": event.channel.sensor_type,
+            "engineering_system_type": event.channel.engineering_system_type,
+            "object_id": event.channel.dispatch_object_id,
+            "object_name": event.channel.dispatch_object.dispatcher_name,
+            "is_alarm": event.is_alarm,
+            "raw_value": event.raw_value,
+            "numeric_value": event.numeric_value,
+        }
+        for event in queryset
+    ]
+
+
+class BaseSensorEventListView(View):
+    """Общая логика: диапазон дат приходит из get_range(), остальное — фильтры/пагинация."""
+
+    def get_range(self, request):
+        """Должен вернуть (start, end) — naive datetime, end не включается."""
+        raise NotImplementedError
+
+    def get(self, request, *args, **kwargs):
+        try:
+            start, end = self.get_range(request)
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+
+        qs = SensorEvent.objects.select_related(
+            "channel", "channel__dispatch_object"
+        ).filter(occurred_at__gte=start, occurred_at__lt=end)
+
+        channel_id = request.GET.get("channel_id")
+        if channel_id:
+            qs = qs.filter(channel_id=channel_id)
+
+        object_id = request.GET.get("object_id")
+        if object_id:
+            qs = qs.filter(channel__dispatch_object_id=object_id)
+
+        alarm = _parse_bool(request.GET.get("alarm"))
+        if alarm is not None:
+            qs = qs.filter(is_alarm=alarm)
+
+        qs = qs.order_by("occurred_at")
+
+        try:
+            page_size = min(int(request.GET.get("page_size", PAGE_SIZE_DEFAULT)), PAGE_SIZE_MAX)
+            page_number = int(request.GET.get("page", 1))
+        except ValueError:
+            return JsonResponse({"error": "page и page_size должны быть числами"}, status=400)
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_number)
+
+        return JsonResponse(
+            {
+                "range": {"start": start.isoformat(), "end": end.isoformat()},
+                "count": paginator.count,
+                "page": page.number,
+                "pages": paginator.num_pages,
+                "page_size": page_size,
+                "results": _serialize_events(page.object_list),
+            }
+        )
+
+
+class DayEventsView(BaseSensorEventListView):
+    """GET /api/events/day/?date=2025-01-15 — без ?date берётся сегодня."""
+
+    def get_range(self, request):
+        date_str = request.GET.get("date")
+        if date_str:
+            day = parse_date(date_str)
+            if day is None:
+                raise ValueError("Неверный формат date, ожидается YYYY-MM-DD")
+        else:
+            day = datetime.now().date()
+
+        start = datetime.combine(day, datetime.min.time())
+        end = start + timedelta(days=1)
+        return start, end
+
+
+class WeekEventsView(BaseSensorEventListView):
+    """GET /api/events/week/?date=2025-01-15 — ISO-неделя (пн-вс) вокруг date."""
+
+    def get_range(self, request):
+        date_str = request.GET.get("date")
+        if date_str:
+            day = parse_date(date_str)
+            if day is None:
+                raise ValueError("Неверный формат date, ожидается YYYY-MM-DD")
+        else:
+            day = datetime.now().date()
+
+        week_start_date = day - timedelta(days=day.weekday())  # понедельник
+        start = datetime.combine(week_start_date, datetime.min.time())
+        end = start + timedelta(days=7)
+        return start, end
+
+
+class MonthEventsView(BaseSensorEventListView):
+    """GET /api/events/month/?year=2025&month=1 — без параметров текущий месяц."""
+
+    def get_range(self, request):
+        now = datetime.now()
+        try:
+            year = int(request.GET.get("year", now.year))
+            month = int(request.GET.get("month", now.month))
+        except ValueError:
+            raise ValueError("year и month должны быть числами")
+
+        if not (1 <= month <= 12):
+            raise ValueError("month должен быть от 1 до 12")
+
+        start = datetime(year, month, 1)
+        end = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
+        return start, end
+    
