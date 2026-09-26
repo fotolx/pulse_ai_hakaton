@@ -27,6 +27,11 @@
 .network-map__point:hover, .network-map__point:focus-visible { transform: scale(1.18); }
 .network-map__point--alert { cursor: pointer; }
 .network-map__district-point { cursor: pointer; }
+.network-map__annotation { cursor: help; }
+.network-map__annotation-content { opacity: 0; pointer-events: none; }
+.network-map__annotation:hover .network-map__annotation-content,
+.network-map__annotation:focus-visible .network-map__annotation-content { opacity: 1; }
+.network-map__viewport--grabbing .network-map__annotation-content { opacity: 0; }
 .network-map__permit-tooltip { pointer-events: none; }
 .network-map__permit-indicator { cursor: help; }
 .network-map__permit-indicator:focus-visible { outline: none; filter: drop-shadow(0 0 3px #005d9e); }
