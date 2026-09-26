@@ -7,25 +7,40 @@ const incidents = new Map([
 ]);
 
 export function prepareMainScheme(layer, { signal, canActivate, tooltip }) {
-  // Each exported label is a background, border, information icon and outlined
-  // text. Keep the artwork intact and the hit area in its original coordinates.
-  layer.querySelectorAll('rect[fill="#E0EDFF"]').forEach((background, index) => {
-    const parts = [background];
-    for (let next = background.nextElementSibling; parts.length < 4 && next; next = next.nextElementSibling) parts.push(next);
-    const group = document.createElementNS(ns, 'g');
-    group.setAttribute('class', 'network-map__annotation');
-    group.setAttribute('tabindex', '0');
-    group.setAttribute('role', 'img');
-    group.setAttribute('aria-label', `Информация об объекте ${index + 1}`);
-    const hit = background.cloneNode(false);
-    hit.setAttribute('fill', 'transparent');
-    hit.setAttribute('class', 'network-map__annotation-hit');
+  // Explicit pairs from map.svg: label position -> icon outline and shape count.
+  const annotations = [
+    [646, 334, 'M793 369.4', 2, 'ПС «Первомайская»'],
+    [923, 294, 'M1000 332.4', 2, 'ПС «Щёлковская»'],
+    [733, 478, 'M827 448.4', 2, 'ПС «041086»'],
+    [20, 717, 'M57 752.4', 2, 'ПС «452845»'],
+    [1304, 189, 'M1268 183.4', 2, 'ПС «958481»'],
+    [1638, 238, 'M1785 279.4', 3, 'Соединение «958481» / «451461»'],
+    [488, 731, 'M595 703.4', 3, 'Соединение «041086» / «452845»'],
+    [1015, 462, 'M1031 438.4', 3, 'Соединение Первомайский / Щёлковский'],
+  ];
+  const overlays = [];
+  for (const [x, y, outline, shapeCount, name] of annotations) {
+    const background = layer.querySelector(`rect[x="${x}"][y="${y}"][fill="#E0EDFF"]`);
+    const icon = layer.querySelector(`path[d^="${outline}"]`);
+    if (!background || !icon) continue;
     const content = document.createElementNS(ns, 'g');
     content.setAttribute('class', 'network-map__annotation-content');
-    background.replaceWith(group);
+    content.setAttribute('aria-hidden', 'true');
+    const parts = [background];
+    for (let next = background.nextElementSibling; parts.length < 4 && next; next = next.nextElementSibling) parts.push(next);
     content.append(...parts);
-    group.append(hit, content);
-  });
+
+    const trigger = document.createElementNS(ns, 'g');
+    trigger.setAttribute('class', 'network-map__annotation-trigger');
+    trigger.setAttribute('role', 'img');
+    trigger.setAttribute('aria-label', name);
+    const shapes = [icon];
+    for (let next = icon.nextElementSibling; shapes.length < shapeCount && next; next = next.nextElementSibling) shapes.push(next);
+    trigger.append(...shapes);
+    trigger.addEventListener('pointerenter', () => content.classList.add('network-map__annotation-content--visible'), { signal });
+    trigger.addEventListener('pointerleave', () => content.classList.remove('network-map__annotation-content--visible'), { signal });
+    overlays.push(trigger, content);
+  }
   // The exported legend is artwork; the fixed HTML legend provides interaction.
   layer.querySelector('g[filter="url(#filter0_d_2002_1284)"]')?.remove();
   const nodes = [...layer.querySelectorAll('circle[stroke="#334C7F"], path[stroke="#334C7F"]')];
@@ -75,4 +90,5 @@ export function prepareMainScheme(layer, { signal, canActivate, tooltip }) {
     }, { signal });
     layer.append(group);
   });
+  layer.append(...overlays);
 }
