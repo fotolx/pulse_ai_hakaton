@@ -1,6 +1,9 @@
 import { mountDistrictMap } from '../components/network-map/district-map.js';
 import { mountNodePopup } from '../components/network-map/node-popup.js';
-import { districtNode103 } from '../data/district-node.js';
+import { districtNode } from '../data/district-node.js';
+
+const quietNodeIds = ['101', '106', '109', '110', '202', '301', '302', '303', '304', '305'];
+const alarmNodeIds = ['102', '103', '105', '107', '108', '201'];
 
 export default {
   title: 'Район',
@@ -8,10 +11,12 @@ export default {
     <div class="district-map-page" data-district-map></div>`,
   mount(root) {
     const map = mountDistrictMap(root.querySelector('[data-district-map]'));
-    const popup = mountNodePopup(root);
-    const alarmPopup = mountNodePopup(root, { node: districtNode103 });
+    const popups = [
+      ...quietNodeIds.map(id => mountNodePopup(root, { node: districtNode(id) })),
+      ...alarmNodeIds.map(id => mountNodePopup(root, { node: districtNode(id, { alarm: true }) })),
+    ];
     const openEquipment = event => {
-      if (event.detail?.nodeId === '104') location.href = new URL('/equipment/', location.href).href;
+      if (event.detail?.nodeId === '104') location.href = new URL('./equipment.html', location.href).href;
     };
     root.addEventListener('network:incident-select', openEquipment);
     const surface = root.querySelector('.network-map');
@@ -32,7 +37,7 @@ export default {
       const button = event.target.closest('[data-map-mode]');
       if (!button) return;
       if (button.dataset.mapMode === 'scheme') {
-        location.href = '/scheme/';
+        location.href = '/scheme.html';
         return;
       }
       surface.classList.toggle('network-map--scheme', false);
@@ -42,8 +47,7 @@ export default {
     return () => {
       modes.removeEventListener('click', changeMode);
       modes.remove();
-      popup.destroy();
-      alarmPopup.destroy();
+      popups.forEach(popup => popup.destroy());
       root.removeEventListener('network:incident-select', openEquipment);
       map.destroy();
     };
