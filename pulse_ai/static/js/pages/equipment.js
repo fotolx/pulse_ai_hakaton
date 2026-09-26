@@ -3,12 +3,17 @@ import { createEquipmentService, normalizeEquipment } from '../services/equipmen
 import { mountEquipmentChart } from '../components/equipment-charts.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
-const icon = (name) => name === 'search' ? '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="m12 12 5 5"/></svg>' : '';
+const icon = name => ({
+  search: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="m12 12 5 5"/></svg>',
+  expand: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 2v10M4.5 8.5 8 12l3.5-3.5"/></svg>',
+  collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 14V4M4.5 7.5 8 4l3.5 3.5"/></svg>',
+}[name] || '');
+const designPicketIds = ['101', '102', '103', '104', '105', '106'];
 export default {
   title: 'Реестр оборудования',
   render: () => `<div class="equipment">
     <aside class="equipment__tree" aria-label="Выбор оборудования">
-      <div class="equipment__search"><label>${icon('search')}<input type="search" placeholder="Поиск" aria-label="Поиск станции или пикета"></label><button type="button" data-tree="expand" aria-label="Развернуть все пикеты" title="Развернуть все">↓</button><button type="button" data-tree="collapse" aria-label="Свернуть все пикеты" title="Свернуть все">↑</button></div>
+      <div class="equipment__search"><label>${icon('search')}<input type="search" placeholder="Поиск" aria-label="Поиск станции или пикета"></label><button type="button" data-tree="expand" aria-label="Развернуть все пикеты" title="Развернуть все">${icon('expand')}</button><button type="button" data-tree="collapse" aria-label="Свернуть все пикеты" title="Свернуть все">${icon('collapse')}</button></div>
       <nav data-equipment-tree aria-label="Станции и пикеты"></nav>
     </aside>
     <section class="equipment__main" aria-label="Оборудование пикета">
@@ -45,12 +50,15 @@ export default {
     }
     function renderTree() {
       const query = search.value.trim().toLocaleLowerCase('ru');
-      tree.innerHTML = snapshot.stations.map(station => {
-        const pickets = station.pickets.filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
+      // The page shows the tree of the station whose equipment is open.
+      const activeStation = current()?.station;
+      tree.innerHTML = (activeStation ? [activeStation] : []).map(station => {
+        const available = new Map(station.pickets.map(picket => [picket.id, picket]));
+        const pickets = designPicketIds.map(id => available.get(id) || { id, unavailable: true }).filter(picket => `${station.name} Пикет №${picket.id}`.toLocaleLowerCase('ru').includes(query));
         if (!pickets.length) return '';
         return `<section class="equipment__station"><h2>${escape(station.name)}</h2>${pickets.map(picket => {
           const key = selectionKey(station, picket), open = expanded.has(key);
-          const disabled = picket.id === "107" ? "" : "disabled";
+          const disabled = picket.id === '104' && !picket.unavailable ? '' : 'disabled';
           return `<div class="equipment__branch"><div class="equipment__node"><button type="button" class="equipment__toggle" ${disabled} data-toggle="${escape(key)}" aria-expanded="${open}" aria-label="${open ? 'Свернуть' : 'Развернуть'} пикет ${escape(picket.id)}">${open ? '−' : '+'}</button><button type="button" class="equipment__select" ${disabled} data-select="${escape(key)}" ${selected === key ? 'aria-current="true"' : ''}>Пикет №${escape(picket.id)}</button></div><div class="equipment__branches" ${open ? '' : 'hidden'}><button type="button" ${disabled} data-select="${escape(key)}" data-group="key">Ключевые датчики</button><button type="button" ${disabled} data-select="${escape(key)}" data-group="additional">Дополнительные датчики</button></div></div>`;
         }).join('')}</section>`;
       }).join('') || '<p class="equipment__empty">Ничего не найдено</p>';
@@ -80,8 +88,8 @@ export default {
       if (snapshot && Date.parse(data.updatedAt) < Date.parse(snapshot.updatedAt)) return;
       snapshot = data;
       if (!current()) {
-        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === "107"));
-        selected = station ? selectionKey(station, station.pickets.find(picket => picket.id === "107")) : null;
+        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === "104"));
+        selected = station ? selectionKey(station, station.pickets.find(picket => picket.id === "104")) : null;
         if (selected) expanded.add(selected);
       }
       status.textContent = '';
@@ -122,7 +130,7 @@ export default {
     root.querySelectorAll('[data-tree]').forEach(button => button.addEventListener('click', () => {
       if (!snapshot) return;
       expanded.clear();
-      if (button.dataset.tree === 'expand') snapshot.stations.forEach(station => station.pickets.filter(picket => picket.id === "107").forEach(picket => expanded.add(selectionKey(station, picket))));
+      if (button.dataset.tree === 'expand') snapshot.stations.forEach(station => station.pickets.filter(picket => picket.id === "104").forEach(picket => expanded.add(selectionKey(station, picket))));
       renderTree();
     }, options));
     content.addEventListener('click', event => {
