@@ -92,7 +92,7 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (action === 'close') { closeCard(); return; }
     if (action === 'scheme' && node.id === '107') {
-      location.href = new URL('./equipment.html', location.href).href;
+      location.href = new URL('/equipment/', location.href).href;
       return;
     }
     if (['photo', 'scheme', 'sensors'].includes(action)) showViewer(action);
