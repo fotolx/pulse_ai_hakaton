@@ -10,6 +10,10 @@ export default {
     const map = mountDistrictMap(root.querySelector('[data-district-map]'));
     const popup = mountNodePopup(root);
     const alarmPopup = mountNodePopup(root, { node: districtNode103 });
+    const openEquipment = event => {
+      if (event.detail?.nodeId === '104') location.href = new URL('/equipment/', location.href).href;
+    };
+    root.addEventListener('network:incident-select', openEquipment);
     const surface = root.querySelector('.network-map');
     const warning = document.createElement('p');
     warning.className = 'district-map-warning';
@@ -28,7 +32,7 @@ export default {
       const button = event.target.closest('[data-map-mode]');
       if (!button) return;
       if (button.dataset.mapMode === 'scheme') {
-        location.href = new URL('/scheme/', location.href).href;
+        location.href = '/scheme/';
         return;
       }
       surface.classList.toggle('network-map--scheme', false);
@@ -40,6 +44,7 @@ export default {
       modes.remove();
       popup.destroy();
       alarmPopup.destroy();
+      root.removeEventListener('network:incident-select', openEquipment);
       map.destroy();
     };
   },
