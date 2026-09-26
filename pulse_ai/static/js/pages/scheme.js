@@ -21,7 +21,7 @@ const gauge = (label,angle) => `<div class="scheme-board__gauge"><svg viewBox="0
 export default {
   title: 'ПС «Первомайская» — Схема',
   render: () => `<h1 class="visually-hidden">Схема ПС «Первомайская»</h1><section class="scheme-board" aria-label="Схема сети ПС «Первомайская»"><div class="scheme-board__frame"><div class="scheme-board__size"><div class="scheme-board__surface">
-    <img class="scheme-board__art" src="./img/map/Shema-2.svg" alt="Схема тоннеля и пикетов 104, 105 и 106"><h2 class="scheme-board__title">ПС «Первомайская»</h2><img class="scheme-board__station" src="./img/icons/stanciya.svg" alt="Подстанция Первомайская">
+    <img class="scheme-board__art" src="/static/img/map/Shema-2.svg" alt="Схема тоннеля и пикетов 104, 105 и 106"><h2 class="scheme-board__title">ПС «Первомайская»</h2><img class="scheme-board__station" src="/static/img/icons/stanciya.svg" alt="Подстанция Первомайская">
     <aside class="scheme-board__sidebar" aria-label="Электрика подстанции"><div class="scheme-board__readings"><div><b>НАГРУЗКА, %</b><small>план&nbsp;&nbsp;&nbsp; факт</small><strong data-station="load">70&nbsp;&nbsp; 62</strong></div><div><b>НАПРЯЖЕНИЕ, кВ</b><small>план&nbsp;&nbsp;&nbsp; факт</small><strong data-station="voltage">10.5&nbsp; 10.5</strong></div></div><div class="scheme-board__electric"><b>Электрика ПС</b>${gauge('Напряжение · 10.5 кВ',-12)}${gauge('Загрузка · 62%',27)}${gauge('Темп. трансф. · 41 °C',-45)}</div></aside>
     <div class="scheme-board__temperatures" aria-label="Температура линии">${[238,415,591,768,944].map((x,i) => `<span data-line="line-${i+1}" style="left:${x}px"></span>`).join('')}</div>
     <div class="scheme-board__sensors" aria-label="Текущие показания датчиков">${sensorPositions.map(([id,x,y,width,align]) => `<span class="scheme-board__sensor scheme-board__sensor--${align}" style="left:${x}px;top:${y}px;width:${width}px"><b data-sensor-label="${id}"></b><small data-sensor-value="${id}"></small></span>`).join('')}</div>
@@ -29,7 +29,7 @@ export default {
     <button type="button" class="scheme-board__picket scheme-board__picket--105" data-picket-pending aria-haspopup="dialog">Пикет № 105 <span aria-hidden="true">↗</span></button>
     <button type="button" class="scheme-board__picket scheme-board__picket--106" data-picket-pending aria-haspopup="dialog">Пикет № 106 <span aria-hidden="true">↗</span></button>
   </div></div><p class="scheme-board__warning">⚠ Демонстрационный фрагмент тоннеля — в финальной версии он прокручивается по всей длине, с данными по каждому пикету</p></div>
-  <dialog class="scheme-pending" aria-labelledby="scheme-pending-title"><img src="./img/icons/IconWrench.svg" width="32" height="32" alt=""><h2 id="scheme-pending-title">Мы уже над этим работаем —<br>скоро здесь появится<br>полноценный функционал</h2></dialog>
+  <dialog class="scheme-pending" aria-labelledby="scheme-pending-title"><img src="/static/img/icons/IconWrench.svg" width="32" height="32" alt=""><h2 id="scheme-pending-title">Мы уже над этим работаем —<br>скоро здесь появится<br>полноценный функционал</h2></dialog>
   <p class="scheme-board__status" role="status" hidden></p>
   <div class="scheme-board__metrics" data-metrics></div>
   </section>`,
