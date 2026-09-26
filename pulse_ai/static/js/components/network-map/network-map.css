@@ -19,6 +19,7 @@
   cursor: default;
 }
 .network-map__point { transform-box: fill-box; transform-origin: center; transition: transform 160ms ease; }
+.network-map__point:focus { outline: none; }
 .network-map__point:hover, .network-map__point:focus-visible { transform: scale(1.18); }
 .network-map__point--alert { cursor: pointer; }
 .network-map__district-point { cursor: pointer; }
@@ -29,7 +30,7 @@
 .network-map__permit-indicator { cursor: help; }
 .network-map__permit-indicator:focus-visible { outline: none; filter: drop-shadow(0 0 3px #005d9e); }
 .network-map__district-point:focus-visible { outline: none; filter: drop-shadow(0 0 3px #005d9e); }
-.network-map__point--alert:focus-visible { outline: 2px solid #00283d; outline-offset: 4px; }
+.network-map__point--alert:focus-visible { outline: none; filter: drop-shadow(0 0 3px #d94038); }
 .network-map__facility,
 .network-map__tech-node {
   cursor: default;
