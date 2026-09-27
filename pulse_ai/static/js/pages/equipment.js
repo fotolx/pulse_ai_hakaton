@@ -10,7 +10,7 @@ const icon = name => ({
 }[name] || '');
 const designPicketIds = ['104', '105', '106', '107', '108', '109'];
 // Demo assets are relative to the static bundle, not to /equipment/ on Django.
-const mediaUrl = value => value?.startsWith('/static/img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
+const mediaUrl = value => value?.startsWith('./img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
 export default {
   title: 'Реестр оборудования',
   render: () => `<div class="equipment">
