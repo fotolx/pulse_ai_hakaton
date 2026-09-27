@@ -1,6 +1,6 @@
 import { equipmentConfig } from '../data/equipment-config.js';
 import { createEquipmentService, normalizeEquipment } from '../services/equipment.js';
-import { forecastPeriods, readForecastSelection, readForecastSnapshot } from '../services/forecast.js';
+import { FORECAST_SNAPSHOT_KEY, forecastPeriods, readForecastSelection, readForecastSnapshot } from '../services/forecast.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 const icon = name => ({
@@ -168,6 +168,11 @@ export default {
     }, options);
     document.addEventListener('forecast:snapshot', event => {
       forecastSnapshot = event.detail;
+      if (snapshot) renderPicket();
+    }, options);
+    window.addEventListener('storage', event => {
+      if (event.key !== FORECAST_SNAPSHOT_KEY) return;
+      forecastSnapshot = readForecastSnapshot();
       if (snapshot) renderPicket();
     }, options);
     load();
