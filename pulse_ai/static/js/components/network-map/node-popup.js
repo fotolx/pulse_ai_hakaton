@@ -10,13 +10,13 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
   const options = { signal: lifecycle.signal };
   const card = document.createElement('dialog');
   card.className = `node-popup${node.alarm ? ' node-popup--alarm' : ''}`;
-  card.id = node.id === '107' ? 'district-node-popup' : `district-node-popup-${node.id}`;
+  card.id = `district-node-popup-${node.id}`;
   card.setAttribute('aria-labelledby', `node-popup-title-${node.id}`);
   card.innerHTML = `
     <button class="node-popup__close" type="button" aria-label="Закрыть карточку узла">×</button>
     <header class="node-popup__header">
       <h2 id="node-popup-title-${node.id}" tabindex="-1">№ ${node.id} <span class="node-popup__dot" aria-label="Жёлтый индикатор состояния"></span></h2>
-      <div class="node-popup__badges">${node.alarm ? '<span class="node-popup__badge--danger">Пожар</span>' : ''}<span>Контроль активен</span><span class="${node.alarm ? 'node-popup__badge--danger' : ''}">${node.affectedSystems} из ${node.totalSystems} подсистем</span>${node.alarm ? '<span class="node-popup__alarm-count" aria-label="2 тревоги">2</span>' : `<span class="node-popup__badge--good">${node.quietDays} дней спокоен</span>`}</div>
+      <div class="node-popup__badges">${node.alarm ? '<span class="node-popup__badge--danger">Пожар</span>' : ''}<span>Контроль активен</span><span class="${node.alarm ? 'node-popup__badge--danger' : ''}">${node.affectedSystems} из ${node.totalSystems} подсистем</span>${node.alarm ? '<span class="node-popup__alarm-count" role="timer" aria-label="Осталось 2 минуты"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="node-popup__alarm-track" cx="12" cy="12" r="10" pathLength="100"/><circle class="node-popup__alarm-progress" cx="12" cy="12" r="10" pathLength="100"/></svg><span data-alarm-minutes>2</span></span>' : `<span class="node-popup__badge--good">${node.quietDays} дней спокоен</span>`}</div>
     </header>
     <div class="node-popup__columns">
       <div>
@@ -31,7 +31,7 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
       </div>
     </div>
     ${node.alarm ? `<section class="node-popup__forecast"><h3>Прогноз</h3><p class="node-popup__danger node-popup__forecast-title">Пожар</p><p class="node-popup__factors">Ведущие факторы: дым обнаружен, рост задымления (0.86), совпадение с температурным трендом. 3 похожих случая в истории наблюдений, во всех подтверждён выезд бригады.</p><ol class="node-popup__horizons"><li><span><b>1</b> 35%</span><small>15 сек</small></li><li><span><b>2</b> 75%</span><small>1 мин</small></li><li><span><b>3</b> 100%</span><small>2 мин</small></li></ol></section>` : ''}
-    <footer class="node-popup__footer"><p>Решение диспетчера — формирует эталон для дообучения модели</p><div class="node-popup__actions">${node.alarm ? '<button type="button" data-action="dispatch">Выезд бригады</button><button type="button" data-action="false-alarm">Ложное срабатывание</button><button type="button" data-action="notify">Уведомить техников</button>' : '<button type="button" data-action="maintenance">Плановое ТО</button><button type="button" data-action="close">Закрыть</button>'}</div><p class="node-popup__feedback" role="status" hidden></p></footer>`;
+    <footer class="node-popup__footer"><p>Решение диспетчера — формирует эталон для дообучения модели</p><div class="node-popup__actions">${node.alarm ? '<button type="button" data-action="dispatch">Выезд бригады</button><button type="button" data-action="false-alarm">Ложное срабатывание</button><button type="button" data-action="notify">Уведомить техников</button>' : '<button type="button" data-action="maintenance" disabled>Плановое ТО</button><button type="button" data-action="close">Закрыть</button>'}</div><p class="node-popup__feedback" role="status" hidden></p></footer>`;
 
   const viewer = document.createElement('dialog');
   viewer.className = 'node-viewer';
@@ -39,7 +39,40 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
   viewer.innerHTML = `<header><h2 id="node-viewer-title-${node.id}" tabindex="-1"></h2><button type="button" aria-label="Закрыть просмотр">×</button></header><div class="node-viewer__content"></div>`;
   document.body.append(card, viewer);
   const feedback = card.querySelector('.node-popup__feedback');
+  const alarmCount = card.querySelector('.node-popup__alarm-count');
+  const alarmMinutes = card.querySelector('[data-alarm-minutes]');
+  const alarmProgress = card.querySelector('.node-popup__alarm-progress');
   let opener;
+  let alarmFrame;
+
+  function stopAlarmCountdown() {
+    if (alarmFrame) cancelAnimationFrame(alarmFrame);
+    alarmFrame = undefined;
+  }
+  function startAlarmCountdown() {
+    if (!alarmCount) return;
+    stopAlarmCountdown();
+    const duration = 2 * 60 * 1000;
+    const startedAt = performance.now();
+    let announcedMinutes = 2;
+    const update = now => {
+      const elapsed = Math.min(now - startedAt, duration);
+      const remaining = duration - elapsed;
+      const minutes = Math.ceil(remaining / 60000);
+      alarmMinutes.textContent = String(minutes);
+      alarmProgress.style.strokeDashoffset = String(elapsed / duration * 100);
+      if (minutes !== announcedMinutes) {
+        announcedMinutes = minutes;
+        alarmCount.setAttribute('aria-label', minutes ? `Осталось ${minutes} минута` : 'Время истекло');
+      }
+      if (elapsed < duration && card.open) alarmFrame = requestAnimationFrame(update);
+      else alarmFrame = undefined;
+    };
+    alarmMinutes.textContent = '2';
+    alarmProgress.style.strokeDashoffset = '0';
+    alarmCount.setAttribute('aria-label', 'Осталось 2 минуты');
+    alarmFrame = requestAnimationFrame(update);
+  }
 
   function message(text) { feedback.textContent = text; feedback.hidden = false; }
   const decisionLabels = { maintenance: 'Плановое ТО', monitoring: 'Мониторинг', dispatch: 'Выезд бригады', 'false-alarm': 'Ложное срабатывание' };
@@ -47,7 +80,7 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
     card.querySelectorAll('.node-popup__actions button').forEach(button => {
       const selected = button.dataset.action === record.decision;
       if (button.dataset.action === "close") return;
-      button.disabled = selected && button.dataset.action !== "maintenance";
+      button.disabled = button.dataset.action === 'maintenance' || selected;
       button.setAttribute('aria-pressed', String(selected));
     });
     message('Решение «' + decisionLabels[record.decision] + '» сохранено.');
@@ -66,6 +99,7 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
     dialog.addEventListener('click', event => { if (backdrop && event.target === dialog && outside(event)) dialog.close(); backdrop = false; }, options);
   }
   card.addEventListener('close', () => {
+    stopAlarmCountdown();
     opener?.setAttribute('aria-expanded', 'false');
     if (opener?.isConnected) opener.focus();
   }, options);
@@ -92,7 +126,7 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (action === 'close') { closeCard(); return; }
     if (action === 'scheme' && node.id === '107') {
-      location.href = new URL('/equipment/', location.href).href;
+      location.href = new URL('./equipment.html', location.href).href;
       return;
     }
     if (['photo', 'scheme', 'sensors'].includes(action)) showViewer(action);
@@ -119,11 +153,15 @@ export function mountNodePopup(root, { node = districtNode107, service = createL
     opener = root.querySelector(`[data-node-id="${node.id}"]`);
     opener?.setAttribute('aria-expanded', 'true');
     feedback.hidden = true;
-    card.querySelectorAll('.node-popup__actions [data-action]').forEach(button => { button.disabled = false; button.removeAttribute('aria-pressed'); });
+    card.querySelectorAll('.node-popup__actions [data-action]').forEach(button => {
+      button.disabled = button.dataset.action === 'maintenance';
+      button.removeAttribute('aria-pressed');
+    });
     try { const record = service.load(node.id); if (record) saved(record); }
     catch { message('Хранилище решений недоступно. Сохранение может потребовать повторной попытки.'); }
     card.showModal();
+    startAlarmCountdown();
     card.querySelector('h2').focus();
   }, options);
-  return { destroy() { lifecycle.abort(); viewer.close(); card.close(); viewer.remove(); card.remove(); } };
+  return { destroy() { stopAlarmCountdown(); lifecycle.abort(); viewer.close(); card.close(); viewer.remove(); card.remove(); } };
 }
