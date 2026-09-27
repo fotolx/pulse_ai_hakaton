@@ -6,7 +6,7 @@ import equipment from './pages/equipment.js';
 import scheme from './pages/scheme.js';
 import { mountForecast } from './components/forecast/forecast.js';
 import { mountModelSettings } from './components/model-settings/model-settings.js';
-import { createDemoForecastService, storeForecastSelection } from './services/forecast.js';
+import { createDemoForecastService, startForecastSnapshotSync, storeForecastSelection } from './services/forecast.js';
 import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
 import { createDemoNotificationsService } from './services/notifications.js';
@@ -18,17 +18,20 @@ import { taskNotification } from './services/task-notification.js';
 import events from './pages/events.js?v=date-filters-2';
 
 const handover = mountHandover();
+const forecastService = createDemoForecastService();
+// Снимок прогноза обновляется независимо от открытия попапа.
+startForecastSnapshotSync(forecastService, { intervalMs: 15000 });
 const forecast = mountForecast({
-  service: createDemoForecastService(),
+  service: forecastService,
   onOpenPicket(node, context) {
     storeForecastSelection(node, context);
-    const target = location.pathname.endsWith('.html') ? './equipment.html' : '/equipment/';
+    const target = location.pathname.endsWith('.html') ? '/equipment/' : '/equipment/';
     location.href = `${target}?picket=${encodeURIComponent(node.picket)}`;
   },
 });
 const modelSettings = mountModelSettings();
 
-const routes = new Map([['/', home], ['/district', district], ['/pickets', pickets], ['/equipment', equipment], ['/scheme', scheme], ['/events', events]]);
+const routes = new Map([['/', home], ['/district/', district], ['/pickets/', pickets], ['/equipment/', equipment], ['/scheme/', scheme], ['/events/', events]]);
 document.querySelector('.skip-link').addEventListener('click', event => {
   event.preventDefault();
   document.querySelector('#main').focus();
@@ -89,7 +92,7 @@ function renderPage() {
   const standalone = document.body.dataset.page;
   const defaultPath = standalone ? `/${standalone}` : '/district';
   const requested = location.hash.slice(1) || defaultPath;
-  if (['/pickets', '/equipment/', '/events/', '/scheme/'].includes(requested) && requested !== `/${standalone}`) {
+  if (['/pickets/', '/equipment/', '/events/', '/scheme/'].includes(requested) && requested !== `/${standalone}`) {
     location.replace(new URL(`.${requested}.html`, location.href));
     return;
   }
