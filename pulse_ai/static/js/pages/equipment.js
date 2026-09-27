@@ -1,6 +1,6 @@
 import { equipmentConfig } from '../data/equipment-config.js';
 import { createEquipmentService, normalizeEquipment } from '../services/equipment.js';
-import { mountEquipmentChart } from '../components/equipment-charts.js';
+import { forecastPeriods, readForecastSelection, readForecastSnapshot } from '../services/forecast.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 const icon = name => ({
@@ -8,9 +8,9 @@ const icon = name => ({
   expand: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 2v10M4.5 8.5 8 12l3.5-3.5"/></svg>',
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 14V4M4.5 7.5 8 4l3.5 3.5"/></svg>',
 }[name] || '');
-const designPicketIds = ['101', '102', '103', '104', '105', '106'];
+const designPicketIds = ['104', '105', '106', '107', '108', '109'];
 // Demo assets are relative to the static bundle, not to /equipment/ on Django.
-const mediaUrl = value => value?.startsWith('./img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
+const mediaUrl = value => value?.startsWith('/static/img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
 export default {
   title: 'Реестр оборудования',
   render: () => `<div class="equipment">
@@ -42,9 +42,20 @@ export default {
     crumbLabel.className = 'header__area-link header__area-link--active';
     crumb.append(crumbLabel);
     document.querySelector('.header__areas').append(crumb);
-    let snapshot, selected = null, charts = [], request, timer, generation = 0;
+    let snapshot, forecastSnapshot = readForecastSnapshot(), selected = null, charts = [], request, timer, generation = 0;
     const expanded = new Set();
     const disposeCharts = () => { charts.forEach(chart => chart.dispose()); charts = []; };
+    const forecastTable = period => {
+      const rows = forecastSnapshot.rows.filter(row => row.period === period.id);
+      return `<div class="equipment__forecast-table"><table><thead><tr><th aria-label="Номер"></th><th>Тип</th>${period.labels.map(heading => `<th>${heading}</th>`).join('')}</tr></thead><tbody>${rows.map((row, index) => {
+        const danger = period.horizons.some(hour => row.horizons[hour]?.severity === 'danger');
+        const number = period.id === 'short' ? index + 1 : index === 0 ? 1 : 3;
+        return `<tr class="${danger ? 'equipment__forecast-row--danger' : ''}"><td>${number}</td><th scope="row">${escape(row.title)}</th>${period.horizons.map(hour => {
+          const cell = row.horizons[hour];
+          return cell === null ? '<td>–</td>' : `<td class="equipment__forecast-value" style="--level:${cell.value * 5}%"><span>${cell.value}</span></td>`;
+        }).join('')}</tr>`;
+      }).join('')}</tbody></table></div>`;
+    };
     const selectionKey = (station, picket) => JSON.stringify([station.id, picket.id]);
     function current() {
       for (const station of snapshot?.stations || []) {
@@ -63,7 +74,7 @@ export default {
         if (!pickets.length) return '';
         return `<section class="equipment__station"><h2>${escape(station.name)}</h2>${pickets.map(picket => {
           const key = selectionKey(station, picket), open = expanded.has(key);
-          const disabled = picket.id === '104' && !picket.unavailable ? '' : 'disabled';
+          const disabled = picket.unavailable ? 'disabled' : '';
           return `<div class="equipment__branch"><div class="equipment__node"><button type="button" class="equipment__toggle" ${disabled} data-toggle="${escape(key)}" aria-expanded="${open}" aria-label="${open ? 'Свернуть' : 'Развернуть'} пикет ${escape(picket.id)}">${open ? '−' : '+'}</button><button type="button" class="equipment__select" ${disabled} data-select="${escape(key)}" ${selected === key ? 'aria-current="true"' : ''}>Пикет №${escape(picket.id)}</button></div><div class="equipment__branches" ${open ? '' : 'hidden'}><button type="button" ${disabled} data-select="${escape(key)}" data-group="key">Ключевые датчики</button><button type="button" ${disabled} data-select="${escape(key)}" data-group="additional">Дополнительные датчики</button></div></div>`;
         }).join('')}</section>`;
       }).join('') || '<p class="equipment__empty">Ничего не найдено</p>';
@@ -78,27 +89,22 @@ export default {
       content.innerHTML = `<div class="equipment__toolbar"><h1>Пикет № ${escape(picket.id)}</h1><div><button type="button" class="equipment__button equipment__button--outline">Подключиться к видео <span aria-hidden="true">◉</span></button><button type="button" class="equipment__button">Открыть мнемокарту <span aria-hidden="true">↗</span></button></div></div>
         <div class="equipment__photos">${picket.photos.map((photo, index) => `<button type="button" data-photo="${index}" aria-label="Открыть фото ${index + 1} пикета ${escape(picket.id)}"><img src="${escape(photo)}" alt="Коллектор · пикет ${escape(picket.id)}" width="200" height="165"></button>`).join('')}${picket.photos.length < 2 ? '<div class="equipment__photo-empty"><span aria-hidden="true">▧</span><span>Фото не загружено</span></div>' : ''}</div>
         <div class="equipment__columns"><section class="equipment__live"><h2>Реальное время</h2>${sensorGroup(picket.sensors, 'key', 'Ключевые датчики')}${sensorGroup(picket.sensors, 'additional', 'Дополнительные датчики')}</section>
-        <section class="equipment__forecast"><h2>Прогноз</h2><div class="equipment__legend"><span>История</span><span>Сейчас</span><span>Прогноз</span></div><div class="equipment__charts">${picket.sensors.filter(sensor => sensor.group === 'key').map((sensor, index) => `<figure class="equipment__chart"><figcaption><span>${escape(sensor.name)}</span><strong class="equipment__reading equipment__reading--${sensor.severity}">${escape(sensor.displayValue ?? 'Нет данных')}</strong></figcaption>${sensor.chart ? `<div class="equipment__plot"><div class="equipment__bands" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="equipment__canvas" data-chart="${index}" role="img" aria-label="${escape(sensor.name)}: история за 24, 6 и 1 час, текущее значение, прогноз на 1, 6 и 24 часа"></div></div><div class="equipment__axis" aria-hidden="true"><span>−24ч</span><span>−6ч</span><span>−1ч</span><span>0ч</span><span>+1ч</span><span>+6ч</span><span>+24ч</span></div>` : '<p class="equipment__empty">Прогноз пока не поступил</p>'}</figure>`).join('') || '<p class="equipment__empty">Прогноз пока не поступил</p>'}</div></section></div>`;
+        <section class="equipment__forecast"><h2>Прогноз</h2>${forecastPeriods.map(forecastTable).join('')}</section></div>`;
       summary.innerHTML = `<section class="equipment__overview"><h2>Общая сводка</h2><dl><div><dt>Всего датчиков</dt><dd>${picket.summary.totalSensors}</dd></div><div><dt>Точность прогноза</dt><dd>${picket.summary.accuracy ?? '—'}</dd></div></dl></section>${picket.summary.sections.map(section => `<section class="equipment__summary-section"><header><h2>${escape(section.title)}</h2>${section.badge ? `<span class="equipment__badge equipment__badge--${section.tone}">${escape(section.badge)}</span>` : ''}</header><dl>${section.fields.map(field => `<div><dt>${escape(field.label)}</dt><dd>${escape(field.value)}</dd></div>`).join('')}</dl></section>`).join('')}`;
-      let chartError = false;
-      picket.sensors.filter(sensor => sensor.group === 'key').forEach((sensor, index) => {
-        if (!sensor.chart) return;
-        const target = content.querySelector(`[data-chart="${index}"]`);
-        try { charts.push(mountEquipmentChart(target, sensor, { licenseKey: equipmentConfig.anychartLicenseKey })); }
-        catch { target.textContent = 'Не удалось загрузить график'; chartError = true; }
-      });
-      if (chartError) { status.textContent = 'Графики недоступны. Обновите страницу; показания датчиков доступны.'; }
     }
     function accept(data) {
       if (snapshot && Date.parse(data.updatedAt) < Date.parse(snapshot.updatedAt)) return;
-      snapshot = { ...data, stations: data.stations.map(station => ({ ...station,
-        pickets: station.pickets.map(picket => ({ ...picket,
+      snapshot = { ...data, stations: data.stations.slice(0, 1).map(station => {
+        const source = station.pickets.find(picket => picket.id === '104') || station.pickets[0];
+        const byId = new Map(station.pickets.map(picket => [picket.id, picket]));
+        return { ...station, pickets: designPicketIds.map(id => ({ ...(byId.get(id) || structuredClone(source)), id })).map(picket => ({ ...picket,
           photos: picket.photos.map(mediaUrl), schemeUrl: mediaUrl(picket.schemeUrl), videoUrl: mediaUrl(picket.videoUrl),
-        })),
-      })) };
+        })) };
+      }) };
       if (!current()) {
-        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === '104')) || snapshot.stations.find(item => item.pickets.length);
-        const picket = station?.pickets.find(item => item.id === '104') || station?.pickets[0];
+        const requestedId = new URLSearchParams(location.search).get('picket') || readForecastSelection()?.node.picket || '104';
+        const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === requestedId)) || snapshot.stations[0];
+        const picket = station?.pickets.find(item => item.id === requestedId) || station?.pickets[0];
         selected = station && picket ? selectionKey(station, picket) : null;
         if (selected) expanded.add(selected);
       }
@@ -159,6 +165,10 @@ export default {
     document.addEventListener('equipment:snapshot', event => {
       try { accept(normalizeEquipment(event.detail)); }
       catch { status.textContent = 'Получены некорректные данные. Сохранён предыдущий снимок.'; }
+    }, options);
+    document.addEventListener('forecast:snapshot', event => {
+      forecastSnapshot = event.detail;
+      if (snapshot) renderPicket();
     }, options);
     load();
     return () => { lifecycle.abort(); request?.abort(); clearTimeout(timer); disposeCharts(); viewer.close(); crumb.remove(); };
