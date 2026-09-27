@@ -15,4 +15,6 @@ urlpatterns = [
     path("api/events/week/", WeekEventsView.as_view(), name="events-week"),
     path("api/events/month/", MonthEventsView.as_view(), name="events-month"),
     path("api/events/ingest/", IngestEventsView.as_view(), name="events-ingest"),
+    path("api/weather/at/", WeatherAtView.as_view(), name="weather-at"),
+    path("api/weather/range/", WeatherRangeView.as_view(), name="weather-range"),
 ]

@@ -190,3 +190,82 @@ class SensorEvent(models.Model):
             return float(str(self.raw_value).replace(",", "."))
         except (TypeError, ValueError):
             return None
+
+class WeatherLocation(models.Model):
+    """
+    Точка, для которой запрашивается и хранится погода. Отдельная сущность
+    (а не просто lat/lon-поля прямо в WeatherHourly), потому что реальная
+    ячейка сетки ERA5, которую вернул API, отличается от запрошенных
+    координат (см. requested_* vs grid_*) — это стоит хранить один раз на
+    точку, а не дублировать в каждой из ~8760 часовых записей за год.
+    """
+
+    name = models.CharField(max_length=255, unique=True, verbose_name="Название точки")
+    requested_latitude = models.FloatField(verbose_name="Запрошенная широта")
+    requested_longitude = models.FloatField(verbose_name="Запрошенная долгота")
+    grid_latitude = models.FloatField(
+        null=True, blank=True, verbose_name="Широта ячейки сетки (по ответу API)"
+    )
+    grid_longitude = models.FloatField(
+        null=True, blank=True, verbose_name="Долгота ячейки сетки (по ответу API)"
+    )
+    elevation_m = models.FloatField(null=True, blank=True, verbose_name="Высота, м")
+    timezone = models.CharField(
+        max_length=64, default="Europe/Moscow", verbose_name="Часовой пояс"
+    )
+
+    class Meta:
+        verbose_name = "Точка запроса погоды"
+        verbose_name_plural = "Точки запроса погоды"
+
+    def __str__(self):
+        return f"{self.name} ({self.requested_latitude}, {self.requested_longitude})"
+
+
+class WeatherHourly(models.Model):
+    """
+    Погодная витрина: почасовые метеопоказатели ERA5 (Open-Meteo Historical
+    Weather API, /v1/archive, models=era5) для конкретной точки.
+
+    observed_at — ЛОКАЛЬНОЕ время точки (naive datetime, как и occurred_at
+    в SensorEvent — согласуется с USE_TZ=False в settings.py), потому что
+    запрос делается с &timezone=Europe/Moscow и API возвращает временные
+    метки уже в этом часовом поясе, без смещения.
+
+    Составной первичный ключ (location, observed_at) — по той же причине,
+    что и в SensorEvent: TimescaleDB требует, чтобы partitioning-колонка
+    (observed_at) входила в любой unique/primary key constraint таблицы.
+    """
+
+    pk = models.CompositePrimaryKey("location", "observed_at")
+    location = models.ForeignKey(
+        WeatherLocation,
+        on_delete=models.CASCADE,
+        related_name="hourly_records",
+        verbose_name="Точка",
+    )
+    observed_at = models.DateTimeField(verbose_name="Дата и время (локальное)")
+    temperature_2m = models.FloatField(
+        null=True, blank=True, verbose_name="Температура на 2м, °C"
+    )
+    relative_humidity_2m = models.FloatField(
+        null=True, blank=True, verbose_name="Отн. влажность на 2м, %"
+    )
+    pressure_msl = models.FloatField(
+        null=True, blank=True, verbose_name="Давление на уровне моря, hPa"
+    )
+    precipitation = models.FloatField(
+        null=True, blank=True, verbose_name="Осадки за предшествующий час, мм"
+    )
+
+    class Meta:
+        verbose_name = "Погодные данные (час)"
+        verbose_name_plural = "Погодная витрина (почасовая)"
+        indexes = [
+            models.Index(fields=["observed_at"]),
+            models.Index(fields=["location", "observed_at"]),
+        ]
+        ordering = ["observed_at"]
+
+    def __str__(self):
+        return f"{self.location_id} @ {self.observed_at}"

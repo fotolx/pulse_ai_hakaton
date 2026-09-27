@@ -25,7 +25,7 @@ import joblib
 import json
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
-from .models import SensorChannel, SensorEvent
+from .models import SensorChannel, SensorEvent, WeatherHourly, WeatherLocation
 import logging
 
 logger = logging.getLogger(__name__)
@@ -380,4 +380,117 @@ class IngestEventsView(View):
             },
             status=201,
         )
-    
+
+def _serialize_weather(queryset):
+    return [
+        {
+            "location_id": w.location_id,
+            "observed_at": w.observed_at.isoformat(),
+            "temperature_2m": w.temperature_2m,
+            "relative_humidity_2m": w.relative_humidity_2m,
+            "pressure_msl": w.pressure_msl,
+            "precipitation": w.precipitation,
+        }
+        for w in queryset
+    ]
+
+
+class WeatherAtView(View):
+    """
+    GET /api/weather/at/?location_id=1&datetime=2026-06-15T14:30:00
+
+    Возвращает погодную запись за час, к которому относится указанный
+    момент времени (минуты отбрасываются — ERA5 почасовая). Нужен для
+    расчёта метео-признаков во время работы модели предсказания: для
+    произвольного occurred_at события находим соответствующий час погоды.
+    Без ?datetime берётся текущий момент.
+    """
+
+    def get(self, request, *args, **kwargs):
+        location_id = request.GET.get("location_id")
+        if not location_id:
+            return JsonResponse({"error": "Параметр location_id обязателен"}, status=400)
+
+        dt_str = request.GET.get("datetime")
+        if dt_str:
+            try:
+                dt = datetime.fromisoformat(dt_str)
+            except ValueError:
+                return JsonResponse(
+                    {"error": "datetime должен быть в формате ISO 8601, например 2026-06-15T14:30:00"},
+                    status=400,
+                )
+        else:
+            dt = datetime.now()
+
+        hour_start = dt.replace(minute=0, second=0, microsecond=0)
+
+        try:
+            record = WeatherHourly.objects.get(location_id=location_id, observed_at=hour_start)
+        except WeatherHourly.DoesNotExist:
+            return JsonResponse(
+                {
+                    "error": f"Нет данных за {hour_start.isoformat()} для точки {location_id}",
+                    "requested_hour": hour_start.isoformat(),
+                },
+                status=404,
+            )
+
+        return JsonResponse(_serialize_weather([record])[0])
+
+
+class WeatherRangeView(View):
+    """
+    GET /api/weather/range/?location_id=1&start=2026-01-01&end=2026-01-31
+
+    Возвращает все часовые записи за диапазон дат (включительно) —
+    для обучения модели/анализа исторической погоды. Диапазон дат
+    обязателен, без разумного диапазона тут можно случайно запросить
+    весь год разом.
+    """
+
+    def get(self, request, *args, **kwargs):
+        location_id = request.GET.get("location_id")
+        if not location_id:
+            return JsonResponse({"error": "Параметр location_id обязателен"}, status=400)
+
+        start_str = request.GET.get("start")
+        end_str = request.GET.get("end")
+        if not start_str or not end_str:
+            return JsonResponse({"error": "Параметры start и end (YYYY-MM-DD) обязательны"}, status=400)
+
+        start_date = parse_date(start_str)
+        end_date = parse_date(end_str)
+        if start_date is None or end_date is None:
+            return JsonResponse({"error": "start/end должны быть в формате YYYY-MM-DD"}, status=400)
+
+        qs = (
+            WeatherHourly.objects.filter(
+                location_id=location_id,
+                observed_at__date__gte=start_date,
+                observed_at__date__lte=end_date,
+            )
+            .order_by("observed_at")
+        )
+
+        try:
+            page_size = min(int(request.GET.get("page_size", PAGE_SIZE_DEFAULT)), PAGE_SIZE_MAX)
+            page_number = int(request.GET.get("page", 1))
+        except ValueError:
+            return JsonResponse({"error": "page и page_size должны быть числами"}, status=400)
+
+        paginator = Paginator(qs, page_size)
+        page = paginator.get_page(page_number)
+
+        return JsonResponse(
+            {
+                "location_id": int(location_id),
+                "range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+                "count": paginator.count,
+                "page": page.number,
+                "pages": paginator.num_pages,
+                "page_size": page_size,
+                "results": _serialize_weather(page.object_list),
+            }
+        )
+   
