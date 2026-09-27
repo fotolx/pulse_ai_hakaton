@@ -40,7 +40,12 @@
 .node-popup__actions [data-action="monitoring"]:disabled { color: #008b68; background: #effbf7; border-color: #b1e5d6; }
 .node-popup__footer .node-popup__feedback { margin-top: 10px; }
 .node-popup--alarm .node-popup__badges .node-popup__badge--danger { color: #ff3f49; border-color: #ff3f49; }
-.node-popup--alarm .node-popup__badges .node-popup__alarm-count { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 2px solid #ff5059; border-radius: 50%; color: #ff5059; font-size: 12px; font-weight: 600; }
+.node-popup--alarm .node-popup__badges .node-popup__alarm-count { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 0; border-radius: 50%; color: #ff5059; font-size: 12px; font-weight: 600; line-height: 20px; }
+.node-popup__alarm-count svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+.node-popup__alarm-count circle { fill: none; stroke-width: 2.4; }
+.node-popup__alarm-track { stroke: #ffd9dc; }
+.node-popup__alarm-progress { stroke: #ff5059; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; }
+.node-popup__alarm-count [data-alarm-minutes] { position: relative; z-index: 1; border: 0; padding: 0; color: inherit; font: inherit; line-height: inherit; }
 .node-popup--alarm .node-popup__meta svg { stroke: #71838d; }
 .node-popup--alarm { width: 552px; padding: 20px 19px 19px; scrollbar-width: thin; scrollbar-color: #8da1ac40 transparent; }
 .node-popup--alarm .node-popup__photo img { height: 164px; object-fit: cover; }
