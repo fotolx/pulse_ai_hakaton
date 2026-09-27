@@ -3,8 +3,7 @@
 .handover__header { position: relative; margin-bottom: 28px; }
 .handover__title { font-size: 16px; line-height: 20px; font-weight: 700; }
 .handover__meta { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--color-muted); }
-.handover__close { position: absolute; right: -10px; top: -12px; width: 28px; height: 28px; border-radius: 4px; color: #82949f; font-size: 22px; }
-.handover__close:hover { background: #f3f6f8; }
+.handover__close { display: none; }
 .handover__heading { font-size: 13px; line-height: 18px; font-weight: 600; }
 .handover__alerts { margin-top: 8px; display: grid; gap: 10px; }
 .handover__alert { position: relative; padding-left: 18px; }
