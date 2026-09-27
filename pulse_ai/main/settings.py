@@ -74,24 +74,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "main.wsgi.application"
 
-
-# Database
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-    # 'default': {
-    # 'ENGINE': 'django.db.backends.postgresql',
-    # 'NAME': str(os.getenv('DBNAME')),
-    # 'USER': str(os.getenv('DBUSER')),
-    # 'PASSWORD': str(os.getenv('PASSWORD')),
-    # 'HOST': str(os.getenv('HOST')),
-    # 'PORT': str(os.getenv('PORT')),
-    # }
-# }
-
-
 # Для разработки — используем прямое подключение (проще отлаживать)
 # Для продакшена — переключите на pgBouncer
 USE_PGBOUNCER = os.getenv('USE_PGBOUNCER', 'False').lower() in ('true', '1')

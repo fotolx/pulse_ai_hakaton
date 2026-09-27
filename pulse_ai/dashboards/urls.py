@@ -14,4 +14,5 @@ urlpatterns = [
     path("api/events/day/", DayEventsView.as_view(), name="events-day"),
     path("api/events/week/", WeekEventsView.as_view(), name="events-week"),
     path("api/events/month/", MonthEventsView.as_view(), name="events-month"),
+    path("api/events/ingest/", IngestEventsView.as_view(), name="events-ingest"),
 ]

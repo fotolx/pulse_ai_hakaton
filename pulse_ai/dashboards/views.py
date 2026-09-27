@@ -25,10 +25,14 @@ import joblib
 import json
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
-from .models import SensorEvent
+from .models import SensorChannel, SensorEvent
+import logging
+
+logger = logging.getLogger(__name__)
 
 PAGE_SIZE_DEFAULT = 500
 PAGE_SIZE_MAX = 5000
+INGEST_BATCH_MAX = 5000
 
 def mobile(request):
     return render(request, 'mobile.html')   
@@ -258,4 +262,122 @@ class MonthEventsView(BaseSensorEventListView):
         start = datetime(year, month, 1)
         end = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
         return start, end
+
+@method_decorator(csrf_exempt, name="dispatch")
+class IngestEventsView(View):
+    """
+    POST /api/events/ingest/
+
+    Приём одного или пачки событий от внешней системы (имитатора потока
+    или реальной диспетчерской системы). Тело запроса — JSON:
+
+        {"events": [
+            {
+                "source_event_id": 4040642809,
+                "channel_id": 2869,
+                "occurred_at": "2025-08-28 13:55:17",
+                "is_alarm": false,
+                "raw_value": "41"
+            },
+            ...
+        ]}
+
+    Либо один объект события без обёртки "events" — для отправки по одному.
+
+    Аутентификация: если задана переменная окружения INGEST_API_KEY,
+    запрос обязан передать заголовок X-API-Key с этим значением.
+    Если переменная не задана — проверка пропускается (удобно для
+    локальной разработки), но в лог пишется предупреждение.
+
+    Идемпотентность: используется тот же bulk_create(ignore_conflicts=True)
+    и тот же composite PK (source_event_id, occurred_at), что и в
+    management-команде импорта — повторная отправка одного и того же
+    события безопасна и не создаёт дублей.
+    """
+
+    REQUIRED_FIELDS = ("source_event_id", "channel_id", "occurred_at")
+
+    def _check_api_key(self, request):
+        expected = os.environ.get("INGEST_API_KEY")
+        if not expected:
+            logger.warning(
+                "INGEST_API_KEY не задан — эндпоинт приёма данных работает без аутентификации"
+            )
+            return True
+        return request.headers.get("X-API-Key") == expected
+
+    def post(self, request, *args, **kwargs):
+        if not self._check_api_key(request):
+            return JsonResponse({"error": "Неверный или отсутствующий X-API-Key"}, status=401)
+
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({"error": "Тело запроса должно быть валидным JSON"}, status=400)
+
+        events_raw = payload.get("events") if isinstance(payload, dict) and "events" in payload else payload
+        if isinstance(events_raw, dict):
+            events_raw = [events_raw]
+        if not isinstance(events_raw, list):
+            return JsonResponse(
+                {"error": "Ожидается объект события или {'events': [...]}"}, status=400
+            )
+        if len(events_raw) > INGEST_BATCH_MAX:
+            return JsonResponse(
+                {"error": f"Слишком большая пачка: максимум {INGEST_BATCH_MAX} событий за запрос"},
+                status=400,
+            )
+
+        channel_ids = set()
+        parsed = []
+        errors = []
+
+        for i, item in enumerate(events_raw):
+            missing = [f for f in self.REQUIRED_FIELDS if item.get(f) in (None, "")]
+            if missing:
+                errors.append({"index": i, "error": f"Отсутствуют поля: {missing}"})
+                continue
+            try:
+                occurred_at = datetime.strptime(str(item["occurred_at"]), "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                errors.append(
+                    {"index": i, "error": "occurred_at должен быть в формате YYYY-MM-DD HH:MM:SS"}
+                )
+                continue
+
+            channel_id = item["channel_id"]
+            channel_ids.add(channel_id)
+            parsed.append(
+                {
+                    "source_event_id": item["source_event_id"],
+                    "channel_id": channel_id,
+                    "occurred_at": occurred_at,
+                    "is_alarm": bool(item.get("is_alarm", False)),
+                    "raw_value": str(item.get("raw_value", "")),
+                }
+            )
+
+        existing_channel_ids = set(
+            SensorChannel.objects.filter(id__in=channel_ids).values_list("id", flat=True)
+        )
+
+        to_create = []
+        skipped_channel = 0
+        for item in parsed:
+            if item["channel_id"] not in existing_channel_ids:
+                skipped_channel += 1
+                continue
+            to_create.append(SensorEvent(**item))
+
+        SensorEvent.objects.bulk_create(to_create, ignore_conflicts=True)
+
+        return JsonResponse(
+            {
+                "received": len(events_raw),
+                "accepted_for_insert": len(to_create),
+                "skipped_unknown_channel": skipped_channel,
+                "validation_errors": errors,
+            },
+            status=201,
+        )
     
