@@ -25,13 +25,13 @@ const forecast = mountForecast({
   service: forecastService,
   onOpenPicket(node, context) {
     storeForecastSelection(node, context);
-    const target = location.pathname.endsWith('.html') ? '/equipment/' : '/equipment/';
+    const target = location.pathname.endsWith('.html') ? './equipment.html' : '/equipment/';
     location.href = `${target}?picket=${encodeURIComponent(node.picket)}`;
   },
 });
 const modelSettings = mountModelSettings();
 
-const routes = new Map([['/', home], ['/district/', district], ['/pickets/', pickets], ['/equipment/', equipment], ['/scheme/', scheme], ['/events/', events]]);
+const routes = new Map([['/', home], ['/district', district], ['/pickets', pickets], ['/equipment', equipment], ['/scheme', scheme], ['/events', events]]);
 document.querySelector('.skip-link').addEventListener('click', event => {
   event.preventDefault();
   document.querySelector('#main').focus();
@@ -92,12 +92,12 @@ function renderPage() {
   const standalone = document.body.dataset.page;
   const defaultPath = standalone ? `/${standalone}` : '/district';
   const requested = location.hash.slice(1) || defaultPath;
-  if (['/pickets/', '/equipment/', '/events/', '/scheme/'].includes(requested) && requested !== `/${standalone}`) {
+  if (['/pickets', '/equipment', '/events', '/scheme'].includes(requested) && requested !== `/${standalone}`) {
     location.replace(new URL(`.${requested}.html`, location.href));
     return;
   }
   if (standalone && routes.has(requested) && requested !== defaultPath) {
-    location.replace(new URL(`/index#${requested}`, location.href));
+    location.replace(new URL(`./index.html#${requested}`, location.href));
     return;
   }
   const path = routes.has(requested) ? requested : defaultPath;
