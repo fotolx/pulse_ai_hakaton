@@ -5,23 +5,29 @@ import { createDemoForecastService, normalizeForecast, createHttpForecastService
 test('demo matches the design and returns independent snapshots', async () => {
   const service = createDemoForecastService();
   const data = await service.load();
-  assert.equal(data.confidenceThreshold, 0.9);
-  assert.deepEqual(data.rows.map(row => [1, 6, 24].map(hour => row.horizons[hour]?.nodes.length ?? null)), [[0, 0, 2], [2, 3, 5], [1, 1, 3], [3, 4, 4], [0, 0, 6]]);
-  data.rows[1].horizons[24].nodes.pop();
-  assert.equal((await service.load()).rows[1].horizons[24].nodes.length, 5);
+  assert.equal(data.confidenceThreshold, 0.58);
+  assert.deepEqual(data.rows.filter(row => row.period === 'short').map(row => [1, 6, 24].map(hour => row.horizons[hour]?.value ?? null)), [[null, null, 5], [1, null, null], [null, null, 3], [null, null, 2], [0, 0, 3], [null, null, 4], [0, 0, 6]]);
+  data.rows[0].horizons[24].nodes.pop();
+  assert.equal((await service.load()).rows[0].horizons[24].nodes.length, 6);
 });
 
 test('validates backend data and distinguishes missing predictions from zero nodes', async () => {
   const data = await createDemoForecastService().load();
   data.rows[0].horizons[6] = null;
-  data.rows[0].horizons[1] = { severity: 'normal', nodes: [] };
-  assert.equal(normalizeForecast(data).rows[0].horizons[1].nodes.length, 0);
+  data.rows[0].horizons[1] = { value: 0, severity: 'normal', nodes: [] };
+  assert.equal(normalizeForecast(data).rows[0].horizons[1].value, 0);
   assert.equal(normalizeForecast(data).rows[0].horizons[6], null);
   assert.throws(() => normalizeForecast({ ...data, confidenceThreshold: 90 }));
   assert.throws(() => normalizeForecast({ ...data, rows: [data.rows[0], data.rows[0]] }));
   data.rows[0].horizons[24].nodes[0].node = null;
   assert.throws(() => normalizeForecast(data));
   assert.deepEqual(normalizeForecast({ confidenceThreshold: 0.9, rows: [] }).rows, []);
+});
+
+test('forecast values are constrained to the ML visualization scale 0..20', async () => {
+  const data = await createDemoForecastService().load();
+  data.rows[0].horizons[24].value = 21;
+  assert.throws(() => normalizeForecast(data), /Некорректный формат/);
 });
 
 test('HTTP adapter forwards cancellation and rejects HTTP failures', async t => {
