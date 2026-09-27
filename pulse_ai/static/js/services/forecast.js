@@ -36,27 +36,27 @@ export function normalizeForecast(data) {
 
 export function storeForecastSnapshot(data) {
   const snapshot = normalizeForecast(data);
-  try { localStorage.setItem(FORECAST_SNAPSHOT_KEY, JSON.stringify(snapshot)); } catch { /* Storage can be unavailable. */ }
-  document.dispatchEvent(new CustomEvent('forecast:snapshot', { detail: snapshot }));
+  try { globalThis.localStorage?.setItem(FORECAST_SNAPSHOT_KEY, JSON.stringify(snapshot)); } catch { /* Storage can be unavailable. */ }
+  globalThis.document?.dispatchEvent(new CustomEvent('forecast:snapshot', { detail: snapshot }));
   return snapshot;
 }
 
 export function readForecastSnapshot() {
   try {
-    const stored = localStorage.getItem(FORECAST_SNAPSHOT_KEY);
+    const stored = globalThis.localStorage?.getItem(FORECAST_SNAPSHOT_KEY);
     return stored ? normalizeForecast(JSON.parse(stored)) : normalizeForecast(forecastDemo);
   } catch { return normalizeForecast(forecastDemo); }
 }
 
 export function storeForecastSelection(node, { incidentId = 'fire', horizon = 24 } = {}) {
   const selection = { version: 1, savedAt: new Date().toISOString(), incidentId, horizon, node };
-  try { localStorage.setItem(FORECAST_SELECTION_KEY, JSON.stringify(selection)); } catch { /* Storage can be unavailable. */ }
+  try { globalThis.localStorage?.setItem(FORECAST_SELECTION_KEY, JSON.stringify(selection)); } catch { /* Storage can be unavailable. */ }
   return selection;
 }
 
 export function readForecastSelection() {
   try {
-    const value = JSON.parse(localStorage.getItem(FORECAST_SELECTION_KEY));
+    const value = JSON.parse(globalThis.localStorage?.getItem(FORECAST_SELECTION_KEY));
     return value?.version === 1 && value.node?.picket ? value : null;
   } catch { return null; }
 }
@@ -72,4 +72,34 @@ export function createHttpForecastService(url) {
     if (!response.ok) throw new Error(`Forecast HTTP ${response.status}`);
     return normalizeForecast(await response.json());
   } };
+}
+
+export async function syncForecastSnapshot(service, { signal } = {}) {
+  signal?.throwIfAborted();
+  return storeForecastSnapshot(await service.load({ signal }));
+}
+
+// Фоновый кэш для демонстрационного стенда. После подключения ML API service
+// меняется на HTTP-адаптер, а цикл синхронизации остаётся тем же.
+export function startForecastSnapshotSync(service, { intervalMs = 15000, onError } = {}) {
+  const controller = new AbortController();
+  let timer, running = false;
+  const schedule = () => {
+    if (!controller.signal.aborted) timer = setTimeout(run, Math.max(1000, intervalMs));
+  };
+  const run = async () => {
+    if (running || controller.signal.aborted) return;
+    running = true;
+    clearTimeout(timer);
+    try { await syncForecastSnapshot(service, { signal: controller.signal }); }
+    catch (error) { if (error.name !== 'AbortError') onError?.(error); }
+    finally { running = false; schedule(); }
+  };
+  const refreshWhenVisible = () => { if (globalThis.document?.visibilityState === 'visible') run(); };
+  globalThis.document?.addEventListener('visibilitychange', refreshWhenVisible, { signal: controller.signal });
+  run();
+  return {
+    refresh: run,
+    stop() { clearTimeout(timer); controller.abort(); },
+  };
 }
