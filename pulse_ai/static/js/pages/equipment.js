@@ -1,6 +1,6 @@
 import { equipmentConfig } from '../data/equipment-config.js';
 import { createEquipmentService, normalizeEquipment } from '../services/equipment.js';
-import { FORECAST_SNAPSHOT_KEY, forecastPeriods, readForecastSelection, readForecastSnapshot } from '../services/forecast.js';
+import { FORECAST_SNAPSHOT_KEY, forecastPeriods, readForecastSnapshot } from '../services/forecast.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 const icon = name => ({
@@ -102,7 +102,13 @@ export default {
         })) };
       }) };
       if (!current()) {
-        const requestedId = new URLSearchParams(location.search).get('picket') || readForecastSelection()?.node.picket || '104';
+        // Прямой вход в реестр всегда начинается с пикета 104. Выбранный в
+        // прогнозе пикет передаётся явно через ?picket=..., поэтому старое
+        // значение из localStorage не может изменить стартовый экран.
+        const urlPicketId = new URLSearchParams(location.search).get('picket');
+        // Без явного перехода из прогноза реестр всегда открывается с пикета 104.
+        // Сохранённый ранее выбор из localStorage на стартовый пикет не влияет.
+        const requestedId = designPicketIds.includes(urlPicketId) ? urlPicketId : '104';
         const station = snapshot.stations.find(item => item.pickets.some(picket => picket.id === requestedId)) || snapshot.stations[0];
         const picket = station?.pickets.find(item => item.id === requestedId) || station?.pickets[0];
         selected = station && picket ? selectionKey(station, picket) : null;
