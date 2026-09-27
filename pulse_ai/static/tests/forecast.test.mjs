@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDemoForecastService, normalizeForecast, createHttpForecastService } from '../js/services/forecast.js';
+import { createDemoForecastService, normalizeForecast, createHttpForecastService, FORECAST_SNAPSHOT_KEY, syncForecastSnapshot } from '../js/services/forecast.js';
 
 test('demo matches the design and returns independent snapshots', async () => {
   const service = createDemoForecastService();
@@ -28,6 +28,18 @@ test('forecast values are constrained to the ML visualization scale 0..20', asyn
   const data = await createDemoForecastService().load();
   data.rows[0].horizons[24].value = 21;
   assert.throws(() => normalizeForecast(data), /Некорректный формат/);
+});
+
+test('background sync writes every loaded ML snapshot to browser storage', async t => {
+  const values = new Map();
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  } });
+  t.after(() => { delete globalThis.localStorage; });
+  const snapshot = await syncForecastSnapshot(createDemoForecastService());
+  assert.equal(JSON.parse(values.get(FORECAST_SNAPSHOT_KEY)).updatedAt, snapshot.updatedAt);
+  assert.equal(JSON.parse(values.get(FORECAST_SNAPSHOT_KEY)).rows.length, 9);
 });
 
 test('HTTP adapter forwards cancellation and rejects HTTP failures', async t => {
