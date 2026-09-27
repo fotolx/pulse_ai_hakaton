@@ -141,7 +141,7 @@ body[data-page="equipment"] *::-webkit-scrollbar-thumb:hover { background: #8da1
 .equipment__search label { height: 28px; }
 .equipment__branches button { min-height: 24px; padding-block: 2px; }
 @media (min-width: 1151px) {
-  .equipment { grid-template-columns: 390px minmax(0, 1fr) clamp(330px, 23.65vw, 454px); }
+  .equipment { grid-template-columns: 330px minmax(0, 1fr) clamp(330px, 23.65vw, 454px); }
   .equipment__tree { padding: 16px 14px 16px 23px; }
   .equipment__summary { min-width: 0; }
 }
@@ -224,7 +224,7 @@ body[data-page="equipment"] *::-webkit-scrollbar-thumb:hover { background: #8da1
   .equipment__toolbar .equipment__button { width: 200px; padding-inline: 16px; white-space: nowrap; }
   .equipment__photos { margin-bottom: 40px; }
   .equipment__photos img, .equipment__photo-empty { width: 199px; }
-  .equipment__columns { grid-template-columns: 45.4fr 54.6fr; }
-  .equipment__forecast { padding-left: 39px; }
+  .equipment__columns { grid-template-columns: 40fr 60fr; }
+  .equipment__forecast { padding-left: 30px; }
   .equipment__overview { margin-bottom: 13px; }
 }
