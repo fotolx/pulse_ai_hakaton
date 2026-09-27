@@ -202,7 +202,7 @@ body[data-page="equipment"] *::-webkit-scrollbar-thumb:hover { background: #8da1
 .equipment__forecast-table tr > *:last-child { border-right: 0; }
 .equipment__forecast-table thead th { height: 31px; color: #3c6a83; font-weight: 600; white-space: nowrap; }
 .equipment__forecast-table th:nth-child(1) { width: 27px; color: #8195a0; }
-.equipment__forecast-table th:nth-child(2) { width: 48%; text-align: left; }
+.equipment__forecast-table th:nth-child(2) { width: 44%; text-align: left; }
 .equipment__forecast-table tbody th { color: #17394b; text-align: left; }
 .equipment__forecast-table tbody td:first-child { color: #8195a0; }
 .equipment__forecast-value { position: relative; isolation: isolate; overflow: hidden; }
