@@ -6,17 +6,27 @@ export function mountMapTooltip(root, { signal, canOpen }) {
   card.hidden = true;
   card.setAttribute('aria-label', 'Показания узла');
   const icons = {
-    smoke: '<path d="M7 1C8 4 3 5 4 8a3 3 0 0 0 6 0c0-1-1-2-1-3 0 2-2 2-2 1s1-3 0-5Z" fill="currentColor"/>',
+    smoke: '<path d="M1.5 4.5h7M1.5 7h7M1.5 9.5h4.5" fill="none" stroke="currentColor" stroke-linecap="round"/>',
     temperature: '<path d="M2 10a5 5 0 1 1 8 0M6 7l2-3" fill="none" stroke="currentColor" stroke-linecap="round"/>',
     power: '<path d="M6 0 2 7h3l-1 5 6-7H7l2-5Z" fill="currentColor"/>',
+    door: '<path d="M3 3.5h6v7H3zM4.5 3.5V2a1.5 1.5 0 0 1 3 0v1.5M7.5 7h.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>',
+    flood: '<path d="M6 1.2C4.9 3 3 5 3 7.1a3 3 0 0 0 6 0C9 5 7.1 3 6 1.2Z" fill="currentColor"/>',
+    gas: '<circle cx="6" cy="6" r="3.7" fill="none" stroke="currentColor"/><path d="M8.6 8.6 11 11" fill="none" stroke="currentColor" stroke-linecap="round"/>',
   };
   const icon = name => `<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">${icons[name]}</svg>`;
-  const readings = () => `<div class="map-tooltip__readings">
-    <p>${icon('smoke')}<span>Дым</span><span>Не обнаружен</span></p>
-    <p>${icon('temperature')}<span>t°</span><span>21,2°</span><span class="map-tooltip__trend">+0,3% <span aria-hidden="true">▴</span></span></p>
-    <p>${icon('power')}<span>ИБП</span><span>Исправны</span></p>
+  const reading = (iconName, label, value, extra = '') =>
+    `<p>${icon(iconName)}<span class="map-tooltip__label">${label}</span><span class="map-tooltip__value">${value}</span>${extra}</p>`;
+  const leftReadings = `<div class="map-tooltip__readings">
+    ${reading('smoke', 'Дым', 'Не обнаружен')}
+    ${reading('temperature', 't°', '21,2°', '<span class="map-tooltip__trend">+0,3% <span aria-hidden="true">▲</span></span>')}
+    ${reading('power', 'ИБП', 'Исправны')}
   </div>`;
-  card.innerHTML = `<header class="map-tooltip__header"><h2 class="map-tooltip__title">№ <span></span><i class="map-tooltip__dot" aria-label="Статус: внимание"></i></h2><button type="button" class="map-tooltip__more">Подробнее <span aria-hidden="true">→</span></button></header><div class="map-tooltip__columns">${readings()}${readings()}</div><p class="map-tooltip__message" role="status" hidden></p>`;
+  const rightReadings = `<div class="map-tooltip__readings map-tooltip__readings--systems">
+    ${reading('door', 'Дверь', 'Замкнут')}
+    ${reading('flood', 'Потоп', 'Сухо')}
+    ${reading('gas', 'CH4', '12% НКПР')}
+  </div>`;
+  card.innerHTML = `<header class="map-tooltip__header"><h2 class="map-tooltip__title">№ <span></span><i class="map-tooltip__dot" aria-label="Статус: внимание"></i></h2><button type="button" class="map-tooltip__more">Подробнее <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h7M6.5 3.5 9 6 6.5 8.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></button></header><div class="map-tooltip__columns">${leftReadings}${rightReadings}</div><p class="map-tooltip__message" role="status" hidden></p>`;
   root.append(card);
   let active, timer;
   const options = { signal };
