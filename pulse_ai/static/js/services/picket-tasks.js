@@ -1,12 +1,27 @@
 import { dispatcherApiUrl } from './api-url.js';
 
-export function createTaskSession(startedAt = Date.now()) {
+export function createTaskSession() {
   const seen = new Set();
+  let initialized = false;
   return {
     unseen(items) {
-      return items.filter(item => typeof item.id === 'string' &&
-        Number.isFinite(Date.parse(item.closedAt)) &&
-        Date.parse(item.receivedAt) >= startedAt && !seen.has(item.id));
+      if (!Array.isArray(items)) throw new TypeError('Invalid event list');
+      // First successful snapshot is history, irrespective of server/client clocks.
+      if (!initialized) {
+        for (const item of items) {
+          if (typeof item?.id === 'string' && item.id) seen.add(item.id);
+        }
+        initialized = true;
+        return [];
+      }
+      const batch = new Set();
+      return items.filter(item => {
+        if (typeof item?.id !== 'string' || !item.id ||
+            !Number.isFinite(Date.parse(item.closedAt)) ||
+            seen.has(item.id) || batch.has(item.id)) return false;
+        batch.add(item.id);
+        return true;
+      });
     },
     markSeen(id) { seen.add(id); },
   };
