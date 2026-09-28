@@ -14,8 +14,8 @@ export function normalizeNotifications(items) {
   return [...unique.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
-export function createDemoNotificationsService() {
-  let items = createDemoNotifications();
+export function createDemoNotificationsService(initialItems = createDemoNotifications()) {
+  let items = normalizeNotifications(initialItems);
   return {
     upsert(next) {
       const validated = normalizeNotifications(next);
