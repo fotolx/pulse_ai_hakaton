@@ -23,7 +23,7 @@ export function subscribeToArrivals({ onArrival, onConnectionChange, interval = 
     controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await fetch(url, { signal: controller.signal, cache: 'no-store', credentials: 'same-origin', headers: { Accept: 'application/json' } });
       if (!response.ok) throw new Error('Arrival connection failed');
       const { items } = await response.json();
       if (!Array.isArray(items)) throw new Error('Invalid arrivals');
