@@ -1,5 +1,8 @@
 .events { flex: 1; width: 100%; min-width: 0; min-height: 0; overflow-y: auto; background: #fff; color: #303741; font-size: 13px; }
-.events__toolbar { display: flex; align-items: center; flex-wrap: nowrap; gap: 5px; min-height: 44px; padding: 5px 12px 5px 36px; border-bottom: 1px solid #dde2e8; }
+.events__toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-height: 44px; padding: 5px 12px 5px 36px; border-bottom: 1px solid #dde2e8; }
+.events__open select { min-height: 33px; border: 1px solid #d9dce5; border-radius: 6px; background: #fff; color: #303741; }
+.events__feedback { margin: 8px 36px; color: #626a78; font-size: 12px; }
+.events__retry { margin: 0 36px 8px; padding: 7px 12px; border: 1px solid #d9dce5; border-radius: 6px; background: #fff; }
 .events__search { display: flex; align-items: center; flex: 0 1 190px; gap: 5px; min-width: 155px; min-height: 34px; padding: 0 10px; border: 1px solid #d8dce6; border-radius: 9px; background: #fafafe; color: #87909d; }
 .events__search-icon { flex: 0 0 16px; width: 16px; height: 16px; color: #626b76; }
 .events__search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 12px; }
