@@ -123,9 +123,19 @@ class Command(BaseCommand):
         precipitation = hourly.get("precipitation", [None] * n)
 
         records = []
+        skipped_not_available = 0
         for i, time_str in enumerate(times):
             # Open-Meteo отдаёт время в формате "YYYY-MM-DDTHH:MM" (без секунд)
             observed_at = datetime.strptime(time_str, "%Y-%m-%dT%H:%M")
+
+            # ERA5 обновляется с задержкой ~5 дней: за самые свежие часы
+            # API не имеет данных. Такие строки НЕ сохраняем — иначе пустые
+            # записи навсегда заблокировали бы догрузку при повторном запуске
+            # (ignore_conflicts пропускает уже существующие ключи).
+            if all(v is None for v in (temperature[i], humidity[i], pressure[i], precipitation[i])):
+                skipped_not_available += 1
+                continue
+
             records.append(
                 WeatherHourly(
                     location=location,
@@ -143,3 +153,10 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Загружено (или уже было загружено) {len(records)} часовых записей для {location}")
         )
+        if skipped_not_available:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Не сохранено {skipped_not_available} часов без данных — ERA5 обновляется с "
+                    f"задержкой ~5 дней. Повторный запуск позже дозагрузит эти часы."
+                )
+            )

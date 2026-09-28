@@ -15,9 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = str(os.getenv('DEBUG'))
+def _env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = list(str(os.getenv('ALLOWED_HOSTS')))
+DEBUG = _env_bool("DEBUG")
+
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
 CSRF_TRUSTED_ORIGINS = ['https://pulse-ai.5d4.ru']
 
 # Application definition
@@ -87,7 +90,7 @@ else:
     # Прямое подключение (для разработки — проще)
     DB_HOST = os.getenv('DATABASE_DIRECT_HOST')
     DB_PORT = os.getenv('DATABASE_DIRECT_PORT', '5432')
-    DB_CONN_MAX_AGE = 600
+    DB_CONN_MAX_AGE = 0 if DEBUG else 600
 
 DATABASES = {
     'default': {
