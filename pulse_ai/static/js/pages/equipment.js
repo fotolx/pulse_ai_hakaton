@@ -9,6 +9,46 @@ const icon = name => ({
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 14V4M4.5 7.5 8 4l3.5 3.5"/></svg>',
 }[name] || '');
 const designPicketIds = ['104', '105', '106', '107', '108', '109'];
+const demoProfiles = {
+  '105': { accuracy: 0.84, sensor: 'additional-6', value: 'АКБ 78%, требуется проверка', severity: 'danger', event: 'Снижение ёмкости ИБП', risk: 'Отказ электропитания', probability: 'Средняя' },
+  '106': { accuracy: 0.87, sensor: 'temperature', value: '23.8 °C', event: 'Нестабильный сигнал датчика', risk: 'Отказ датчика', probability: 'Низкая' },
+  '107': { accuracy: 0.91, sensor: 'contact', value: 'Кратковременное открытие', event: 'Открытие сервисной двери', risk: 'Несанкционированный доступ', probability: 'Средняя' },
+  '108': { accuracy: 0.89, sensor: 'water', value: '4 см', event: 'Рост уровня в приямке', risk: 'Подтопление', probability: 'Высокая' },
+  '109': { accuracy: 0.86, sensor: 'additional-3', value: 'Повышенная вибрация', event: 'Отклонение вентилятора', risk: 'Отказ вентиляции', probability: 'Средняя' },
+};
+function demoPicket(source, id) {
+  const profile = demoProfiles[id];
+  if (!profile) return { ...source, id };
+  const sensors = source.sensors.map(sensor => ({
+    ...sensor,
+    displayValue: sensor.id === profile.sensor ? profile.value : sensor.displayValue,
+    severity: sensor.id === profile.sensor ? profile.severity || 'normal' : 'normal',
+  }));
+  const now = new Date();
+  const date = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow' }).format(now);
+  const time = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }).format(now);
+  return {
+    ...source,
+    id,
+    photos: [],
+    sensors,
+    summary: {
+      totalSensors: sensors.length,
+      accuracy: profile.accuracy,
+      sections: [
+        { title: 'Текущее состояние', badge: profile.severity === 'danger' ? 'ТРЕБУЕТ ВНИМАНИЯ' : 'СТАБИЛЬНО', tone: profile.severity === 'danger' ? 'warning' : 'normal', fields: [
+          { label: 'Дата', value: date }, { label: 'Время', value: time }, { label: 'Событие', value: profile.event }, { label: 'Источник', value: sensors.find(sensor => sensor.id === profile.sensor)?.name || 'Система мониторинга' },
+        ] },
+        { title: 'События за 24 часа', badge: id === '105' || id === '109' ? '1' : '0', tone: 'neutral', fields: [
+          { label: 'Последнее', value: id === '105' || id === '109' ? time : 'Нет событий' }, { label: 'Критических', value: '0' }, { label: 'Подтверждено', value: '0' }, { label: 'Ложных', value: '0' },
+        ] },
+        { title: 'Ближайший прогноз риска', badge: profile.probability === 'Высокая' ? '68%' : profile.probability === 'Средняя' ? '42%' : '18%', tone: profile.probability === 'Высокая' ? 'warning' : 'neutral', fields: [
+          { label: 'Тип', value: profile.risk }, { label: 'Горизонт', value: '24 часа' }, { label: 'Вероятность', value: profile.probability }, { label: 'Тренд', value: profile.probability === 'Низкая' ? 'Стабильно' : 'Требует наблюдения' },
+        ] },
+      ],
+    },
+  };
+}
 // Demo assets are relative to the static bundle, not to /equipment/ on Django.
 const mediaUrl = value => value?.startsWith('./img/') ? new URL(`../../${value.slice(2)}`, import.meta.url).href : value;
 export default {
@@ -86,7 +126,11 @@ export default {
       if (!active) { content.innerHTML = '<p class="equipment__empty">В реестре пока нет оборудования.</p>'; summary.replaceChildren(); crumbLabel.textContent = ''; return; }
       const { station, picket } = active;
       crumbLabel.textContent = station.name;
-      content.innerHTML = `<div class="equipment__toolbar"><h1>Пикет № ${escape(picket.id)}</h1><div><button type="button" class="equipment__button equipment__button--outline">Подключиться к видео <span aria-hidden="true">◉</span></button><button type="button" class="equipment__button">Открыть мнемокарту <span aria-hidden="true">↗</span></button></div></div>
+      const schemeTarget = location.pathname.endsWith('.html') ? './scheme.html' : '/scheme/';
+      const schemeControl = picket.id === '104'
+        ? `<a class="equipment__button" href="${schemeTarget}">Открыть мнемокарту <span aria-hidden="true">↗</span></a>`
+        : '<button type="button" class="equipment__button" disabled>Открыть мнемокарту <span aria-hidden="true">↗</span></button>';
+      content.innerHTML = `<div class="equipment__toolbar"><h1>Пикет № ${escape(picket.id)}</h1><div><button type="button" class="equipment__button equipment__button--outline">Подключиться к видео <span aria-hidden="true">◉</span></button>${schemeControl}</div></div>
         <div class="equipment__photos">${picket.photos.map((photo, index) => `<button type="button" data-photo="${index}" aria-label="Открыть фото ${index + 1} пикета ${escape(picket.id)}"><img src="${escape(photo)}" alt="Коллектор · пикет ${escape(picket.id)}" width="200" height="165"></button>`).join('')}${picket.photos.length < 2 ? '<div class="equipment__photo-empty"><span aria-hidden="true">▧</span><span>Фото не загружено</span></div>' : ''}</div>
         <div class="equipment__columns"><section class="equipment__live"><h2>Реальное время</h2>${sensorGroup(picket.sensors, 'key', 'Ключевые датчики')}${sensorGroup(picket.sensors, 'additional', 'Дополнительные датчики')}</section>
         <section class="equipment__forecast"><h2>Прогноз</h2>${forecastPeriods.map(forecastTable).join('')}</section></div>`;
@@ -97,8 +141,11 @@ export default {
       snapshot = { ...data, stations: data.stations.slice(0, 1).map(station => {
         const source = station.pickets.find(picket => picket.id === '104') || station.pickets[0];
         const byId = new Map(station.pickets.map(picket => [picket.id, picket]));
-        return { ...station, pickets: designPicketIds.map(id => ({ ...(byId.get(id) || structuredClone(source)), id })).map(picket => ({ ...picket,
-          photos: picket.photos.map(mediaUrl), schemeUrl: mediaUrl(picket.schemeUrl), videoUrl: mediaUrl(picket.videoUrl),
+        return { ...station, pickets: designPicketIds.map(id => {
+          const stored = byId.get(id);
+          return stored?.sensors.length ? stored : demoPicket(structuredClone(source), id);
+        }).map(picket => ({ ...picket,
+          photos: picket.id === '104' ? picket.photos.map(mediaUrl) : [], schemeUrl: mediaUrl(picket.schemeUrl), videoUrl: mediaUrl(picket.videoUrl),
         })) };
       }) };
       if (!current()) {
@@ -125,7 +172,7 @@ export default {
       const serial = ++generation;
       request = new AbortController();
       try {
-        const data = await service.load({ signal: AbortSignal.any([lifecycle.signal, request.signal]) });
+        const data = await service.load({ signal: request.signal });
         if (serial === generation && !lifecycle.signal.aborted) accept(data);
       } catch (error) {
         if (lifecycle.signal.aborted || serial !== generation || request.signal.aborted) return;
@@ -156,8 +203,10 @@ export default {
       renderTree();
     }, options));
     content.addEventListener('click', event => {
-      const button = event.target.closest('[data-photo]'), active = current();
-      if (!button || !active) return;
+      const active = current();
+      if (!active) return;
+      const button = event.target.closest('[data-photo]');
+      if (!button) return;
       const { picket } = active;
       const title = viewer.querySelector('h2'), body = viewer.querySelector('[data-viewer-content]');
       title.textContent = `Фото · пикет № ${picket.id}`;
