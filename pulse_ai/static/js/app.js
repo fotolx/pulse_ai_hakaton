@@ -10,10 +10,10 @@ import { createDemoForecastService, startForecastSnapshotSync, storeForecastSele
 import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
 import { createDemoNotificationsService } from './services/notifications.js?v=live-events-1';
-import { subscribeToArrivals } from './services/arrivals.js?v=live-events-1';
+import { subscribeToArrivals } from './services/arrivals.js?v=event-baseline-2';
 import { mountArrivalToasts } from './components/alarm-toast/arrival-toasts.js';
 import { arrivalNotification } from './services/arrival-notification.js';
-import { subscribeToTasks } from './services/picket-tasks.js?v=live-events-1';
+import { subscribeToTasks } from './services/picket-tasks.js?v=event-baseline-2';
 import { taskNotification } from './services/task-notification.js';
 import events from './pages/events.js?v=live-events-1';
 
