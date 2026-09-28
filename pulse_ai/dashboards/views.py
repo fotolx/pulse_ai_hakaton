@@ -1,9 +1,8 @@
 from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic import CreateView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.serializers import serialize
-from django.http import HttpResponse
 from django.utils.decorators import method_decorator  
 from django.views.decorators.csrf import csrf_exempt 
 from django.utils import timezone
@@ -25,7 +24,17 @@ import joblib
 import json
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
-from .models import SensorChannel, SensorEvent, WeatherHourly, WeatherLocation
+from .models import SensorChannel, SensorEvent, WeatherHourly, WeatherLocation, Arrival, Task, ChecklistItem, Event, Picket, Technician, Forecast
+from django.db import transaction
+from .serializers import (
+    serialize_arrival,
+    serialize_task,
+    serialize_event,
+    serialize_forecast,
+    parse_iso_datetime,
+)
+from .services.forecast_service import ForecastAggregationService
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -57,79 +66,6 @@ class RisksValuesView(View):
         result = {
             "status": "Success",
             "message": "Настройки сохранены успешно.",
-            }
-        return HttpResponse(json.dumps(result), content_type="application/json", status=200)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-class TasksView(View):
-    def get(self, request, *args, **kwargs):
-        tasks = {
-  "items": [
-    {
-      "id": "task-107-001",
-      "technicianName": "Иванов Иван",
-      "position": "Техник",
-      "nodeId": "107",
-      "nodeName": "Узел 107",
-      "district": "Первомайский",
-      "task": "Плановое ТО",
-      "closedAt": "2026-09-25T08:15:00.000Z",
-      "statusMap": {
-        "door": "norm",
-        "smoke": "norm",
-        "temp": "norm",
-        "motion": "norm",
-        "gas": "norm",
-        "ups": "fault"
-      },
-      "checklist": [
-        { "id": "door", "label": "КД Дверь", "status": "norm" },
-        { "id": "ups", "label": "ИБП", "status": "fault" }
-      ],
-      "comment": "ИБП требует замены батареи",
-      "photos": [],
-      "receivedAt": "2026-09-25T08:15:03.000Z"
-    }
-  ]
-}      
-        return JsonResponse(tasks, status=200)
-
-    def post(self, request, *args, **kwargs):
-        result = {
-            "id": request.POST.get("id"),
-            "status": "Success",
-            "message": "Задача закрыта успешно.",
-            }
-        return HttpResponse(json.dumps(result), content_type="application/json", status=200)
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-class ArrivalsView(View):
-    def get(self, request, *args, **kwargs):
-        arrivals = {
-  "items": [
-    {
-      "id": "arrival-107-001",
-      "technicianName": "Иванов Иван",
-      "position": "Техник",
-      "nodeId": "107",
-      "nodeName": "Узел 107",
-      "district": "Первомайский",
-      "task": "Плановое ТО",
-      "arrivedAt": "2026-09-25T07:30:00.000Z",
-      "receivedAt": "2026-09-25T07:30:02.000Z"
-    }
-  ]
-}    
-        return JsonResponse(arrivals, status=200)
-
-    def post(self, request, *args, **kwargs):
-        if request.POST.get("id") is None:
-            return HttpResponse("Bad request", status=400)
-        result = {
-            "id": request.POST.get("id"),
-            "status": "Success",
-            "message": "Прибытие сохранено успешно.",
             }
         return HttpResponse(json.dumps(result), content_type="application/json", status=200)
 
@@ -493,4 +429,307 @@ class WeatherRangeView(View):
                 "results": _serialize_weather(page.object_list),
             }
         )
-   
+
+"""
+Views для интеграции с мобильным приложением.
+"""
+
+def get_or_create_technician(name: str, position: str) -> Technician:
+    """Получение или создание специалиста."""
+    technician, _ = Technician.objects.get_or_create(
+        full_name=name,
+        defaults={"position": position},
+    )
+    return technician
+
+
+def get_or_create_picket(picket_id: str, name: str = "", district: str = "") -> Picket:
+    """Получение или создание пикета."""
+    picket, _ = Picket.objects.get_or_create(
+        picket_id=picket_id,
+        defaults={"name": name or f"Пикет {picket_id}", "district": district},
+    )
+    return picket
+
+
+def parse_json_body(request) -> dict:
+    """Парсинг JSON-тела запроса."""
+    try:
+        if request.content_type == "application/json":
+            return json.loads(request.body)
+        return dict(request.POST)
+    except json.JSONDecodeError:
+        return {}
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ArrivalsView(View):
+    """
+    GET /api/arrivals — список прибытий
+    POST /api/arrivals — регистрация прибытия
+    """
+
+    def get(self, request, *args, **kwargs):
+        """Получение списка прибытий."""
+        limit = int(request.GET.get("limit", 100))
+        offset = int(request.GET.get("offset", 0))
+        
+        arrivals = Arrival.objects.select_related(
+            "technician", "picket"
+        ).order_by("-arrived_at")[offset:offset + limit]
+        
+        return JsonResponse({
+            "items": [serialize_arrival(a) for a in arrivals],
+        }, status=200)
+
+    def post(self, request, *args, **kwargs):
+        """Регистрация прибытия специалиста."""
+        data = parse_json_body(request)
+        
+        # Валидация обязательных полей
+        required_fields = ["id", "technicianName", "nodeId", "arrivedAt"]
+        for field in required_fields:
+            if field not in data:
+                return JsonResponse({
+                    "status": "Error",
+                    "message": f"Поле '{field}' обязательно",
+                }, status=400)
+        
+        try:
+            with transaction.atomic():
+                # Получаем или создаём связанные объекты
+                technician = get_or_create_technician(
+                    data["technicianName"],
+                    data.get("position", "Техник"),
+                )
+                
+                picket = get_or_create_picket(
+                    data["nodeId"],
+                    data.get("nodeName", ""),
+                    data.get("district", ""),
+                )
+                
+                # Создаём прибытие
+                arrival, created = Arrival.objects.update_or_create(
+                    arrival_id=data["id"],
+                    defaults={
+                        "technician": technician,
+                        "picket": picket,
+                        "task_description": data.get("task", ""),
+                        "arrived_at": parse_iso_datetime(data["arrivedAt"]),
+                    },
+                )
+                
+                # Создаём событие в журнале
+                Event.objects.create(
+                    event_id=f"event-arrival-{data['id']}",
+                    occurred_at=arrival.arrived_at,
+                    picket=picket,
+                    event_type=Event.EventType.ACCESS,
+                    description=f"Прибытие специалиста: {technician.full_name}",
+                    source="Мобильное приложение",
+                    status=Event.EventStatus.NONE,
+                    related_arrival=arrival,
+                )
+            
+            return JsonResponse({
+                "id": arrival.arrival_id,
+                "status": "Success",
+                "message": "Прибытие сохранено успешно.",
+            }, status=200)
+        
+        except Exception as e:
+            logger.exception("Error saving arrival")
+            return JsonResponse({
+                "status": "Error",
+                "message": str(e),
+            }, status=500)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TasksView(View):
+    """
+    GET /api/tasks — список закрытых задач
+    POST /api/tasks — закрытие задачи
+    """
+
+    def get(self, request, *args, **kwargs):
+        """Получение списка закрытых задач."""
+        limit = int(request.GET.get("limit", 100))
+        offset = int(request.GET.get("offset", 0))
+        
+        tasks = Task.objects.select_related(
+            "technician", "picket"
+        ).prefetch_related("checklist_items").order_by(
+            "-closed_at"
+        )[offset:offset + limit]
+        
+        return JsonResponse({
+            "items": [serialize_task(t) for t in tasks],
+        }, status=200)
+
+    def post(self, request, *args, **kwargs):
+        """Закрытие задачи специалистом."""
+        data = parse_json_body(request)
+        
+        # Валидация обязательных полей
+        if "id" not in data:
+            return JsonResponse({
+                "status": "Error",
+                "message": "Поле 'id' обязательно",
+            }, status=400)
+        
+        try:
+            with transaction.atomic():
+                technician = get_or_create_technician(
+                    data.get("technicianName", "Неизвестный"),
+                    data.get("position", "Техник"),
+                )
+                
+                picket = get_or_create_picket(
+                    data.get("nodeId", "unknown"),
+                    data.get("nodeName", ""),
+                    data.get("district", ""),
+                )
+                
+                # Создаём или обновляем задачу
+                task, created = Task.objects.update_or_create(
+                    task_id=data["id"],
+                    defaults={
+                        "technician": technician,
+                        "picket": picket,
+                        "task_description": data.get("task", ""),
+                        "status_map": data.get("statusMap", {}),
+                        "comment": data.get("comment", ""),
+                        "photos": data.get("photos", []),
+                        "closed_at": parse_iso_datetime(
+                            data.get("closedAt", timezone.now().isoformat())
+                        ),
+                    },
+                )
+                
+                # Обновляем чек-лист
+                task.checklist_items.all().delete()
+                for item in data.get("checklist", []):
+                    ChecklistItem.objects.create(
+                        task=task,
+                        item_id=item.get("id", ""),
+                        label=item.get("label", ""),
+                        status=item.get("status", "norm"),
+                    )
+                
+                # Создаём событие в журнале
+                Event.objects.create(
+                    event_id=f"event-task-{data['id']}",
+                    occurred_at=task.closed_at,
+                    picket=picket,
+                    event_type=Event.EventType.MAINTENANCE,
+                    description=f"Задача закрыта: {task.task_description}",
+                    source=f"Техник {technician.full_name}",
+                    status=Event.EventStatus.CLOSED,
+                    related_task=task,
+                )
+            
+            return JsonResponse({
+                "id": task.task_id,
+                "status": "Success",
+                "message": "Задача закрыта успешно.",
+            }, status=200)
+        
+        except Exception as e:
+            logger.exception("Error saving task")
+            return JsonResponse({
+                "status": "Error",
+                "message": str(e),
+            }, status=500)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ForecastView(View):
+    """
+    GET /api/forecast — получение прогнозов инцидентов
+    """
+
+    def get(self, request, *args, **kwargs):
+        """Получение агрегированных прогнозов."""
+        service = ForecastAggregationService()
+        
+        try:
+            response_data = service.build_forecast_response()
+            return JsonResponse(response_data, status=200)
+        except Exception as e:
+            logger.exception("Error building forecast")
+            return JsonResponse({
+                "status": "Error",
+                "message": str(e),
+            }, status=500)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class EventsView(View):
+    """
+    GET /api/events — журнал событий с фильтрацией
+    """
+
+    def get(self, request, *args, **kwargs):
+        """Получение журнала событий с фильтрацией."""
+        # Параметры фильтрации
+        from_date = request.GET.get("from")
+        to_date = request.GET.get("to")
+        event_type = request.GET.get("type")
+        status = request.GET.get("status")
+        query = request.GET.get("q", "")
+        limit = int(request.GET.get("limit", 100))
+        
+        qs = Event.objects.select_related("picket")
+        
+        # Фильтр по датам
+        if from_date:
+            try:
+                from_dt = datetime.fromisoformat(from_date.replace("Z", "+00:00"))
+                qs = qs.filter(occurred_at__gte=from_dt)
+            except ValueError:
+                pass
+        
+        if to_date:
+            try:
+                to_dt = datetime.fromisoformat(to_date.replace("Z", "+00:00"))
+                qs = qs.filter(occurred_at__lte=to_dt)
+            except ValueError:
+                pass
+        
+        # Фильтр по типу
+        if event_type:
+            qs = qs.filter(event_type=event_type)
+        
+        # Фильтр по статусу
+        if status:
+            qs = qs.filter(status=status)
+        
+        # Текстовый поиск
+        if query:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(description__icontains=query)
+                | Q(picket__picket_id__icontains=query)
+                | Q(source__icontains=query)
+            )
+        
+        total = qs.count()
+        events = qs.order_by("-occurred_at")[:limit]
+        
+        return JsonResponse({
+            "items": [serialize_event(e) for e in events],
+            "total": total,
+        }, status=200)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class HealthView(View):
+    """Проверка работоспособности API."""
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({
+            "status": "ok",
+            "timestamp": timezone.now().isoformat(),
+        }, status=200)   

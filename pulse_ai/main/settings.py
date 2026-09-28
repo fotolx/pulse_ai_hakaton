@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from celery.schedules import crontab
 # from django.conf import settings
 from dotenv import load_dotenv
 load_dotenv()
@@ -38,6 +39,8 @@ INSTALLED_APPS = [
     'admin_panel',
     'auth_users',
     'dashboards',
+    'ml',
+    'django.contrib.postgres',
 ]
 
 MIDDLEWARE = [
@@ -145,6 +148,21 @@ CELERY_ENABLE_UTC = False            # у вас USE_TZ = False, держите 
 
 # django-celery-beat: расписание хранится в БД, а не в файле
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    "hourly-a3-predictions": {
+        "task": "ml.tasks.run_hourly_predictions",
+        "schedule": crontab(minute=5),  # Каждый час в 05 минут
+        "args": ("A3",),
+    },
+    "hourly-a4-predictions": {
+        "task": "ml.tasks.run_hourly_predictions",
+        "schedule": crontab(minute=10),
+        "args": ("A4",),
+    },
+}
+
+
 
 CACHES = {
     'default': {

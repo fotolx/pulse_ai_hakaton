@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import BrinIndex
 
 def user_directory_path(instance, filename):
     return 'saved_models/user_{0}/%Y-%m-%d-%H-%M-%S-{1}'.format(instance.user.id, filename)
@@ -269,3 +271,223 @@ class WeatherHourly(models.Model):
 
     def __str__(self):
         return f"{self.location_id} @ {self.observed_at}"
+
+"""
+Модели для интеграции с мобильным приложением.
+"""
+
+class Picket(models.Model):
+    """Пикет (узел) — справочник."""
+    picket_id = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255)
+    district = models.CharField(max_length=100)  # Район (Первомайский, Щёлковский)
+    collector = models.CharField(max_length=100, blank=True, default="")  # Коллектор
+    okrug = models.CharField(max_length=50, blank=True, default="")       # Округ (ВАО, САО)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_pickets"
+        ordering = ["picket_id"]
+
+    def __str__(self):
+        return f"{self.picket_id} — {self.name}"
+
+
+class Technician(models.Model):
+    """Специалист — справочник."""
+    full_name = models.CharField(max_length=255)
+    position = models.CharField(max_length=100)  # Техник, инженер и т.д.
+    phone = models.CharField(max_length=30, blank=True, default="")
+    email = models.CharField(max_length=255, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_technicians"
+        ordering = ["full_name"]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.position})"
+
+
+class Arrival(models.Model):
+    """Прибытие специалиста к пикету."""
+    arrival_id = models.CharField(max_length=100, unique=True)
+    technician = models.ForeignKey(
+        Technician, on_delete=models.CASCADE, related_name="arrivals"
+    )
+    picket = models.ForeignKey(
+        Picket, on_delete=models.CASCADE, related_name="arrivals"
+    )
+    task_description = models.CharField(max_length=255, blank=True, default="")
+    arrived_at = models.DateTimeField()
+    received_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_arrivals"
+        indexes = [
+            BrinIndex(fields=["arrived_at"]),
+            models.Index(fields=["technician", "arrived_at"]),
+            models.Index(fields=["picket", "arrived_at"]),
+        ]
+        ordering = ["-arrived_at"]
+
+    def __str__(self):
+        return f"{self.technician.full_name} → {self.picket.picket_id} @ {self.arrived_at}"
+
+
+class Task(models.Model):
+    """Задача, закрытая специалистом."""
+    task_id = models.CharField(max_length=100, unique=True)
+    technician = models.ForeignKey(
+        Technician, on_delete=models.CASCADE, related_name="tasks"
+    )
+    picket = models.ForeignKey(
+        Picket, on_delete=models.CASCADE, related_name="tasks"
+    )
+    task_description = models.CharField(max_length=255, blank=True, default="")
+    
+    # Карта состояний датчиков: {"door": "norm", "smoke": "norm", ...}
+    # Значения: "norm", "fault", "warning", "unknown"
+    status_map = models.JSONField(default=dict, blank=True)
+    
+    comment = models.TextField(blank=True, default="")
+    
+    # Фотографии хранятся как base64 data URI или как файловые пути
+    photos = ArrayField(models.TextField(), default=list, blank=True)
+    
+    closed_at = models.DateTimeField()
+    received_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_tasks"
+        indexes = [
+            BrinIndex(fields=["closed_at"]),
+            models.Index(fields=["technician", "closed_at"]),
+            models.Index(fields=["picket", "closed_at"]),
+        ]
+        ordering = ["-closed_at"]
+
+    def __str__(self):
+        return f"{self.task_id} — {self.technician.full_name}"
+
+
+class ChecklistItem(models.Model):
+    """Пункт чек-листа задачи."""
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name="checklist_items"
+    )
+    item_id = models.CharField(max_length=50)  # door, ups, smoke и т.д.
+    label = models.CharField(max_length=100)   # КД Дверь, ИБП и т.д.
+    status = models.CharField(max_length=20)   # norm, fault, warning
+
+    class Meta:
+        db_table = "mobile_checklist_items"
+        ordering = ["task", "item_id"]
+
+    def __str__(self):
+        return f"{self.task.task_id}: {self.item_id} = {self.status}"
+
+
+class Event(models.Model):
+    """Журнал событий."""
+
+    class EventType(models.TextChoices):
+        ALARM = "Тревога", "Тревога"
+        ACCESS = "Допуск", "Допуск"
+        FORECAST = "Прогноз", "Прогноз"
+        COMMUNICATION = "Связь", "Связь"
+        MAINTENANCE = "ТО", "ТО"
+        SHIFT = "Смена", "Смена"
+        DECISION = "Решение", "Решение"
+
+    class EventStatus(models.TextChoices):
+        OPEN = "Открыто", "Открыто"
+        CLOSED = "Закрыто", "Закрыто"
+        FALSE = "Ложное", "Ложное"
+        NONE = "", "Без статуса"
+
+    event_id = models.CharField(max_length=100, unique=True)
+    occurred_at = models.DateTimeField()
+    
+    picket = models.ForeignKey(
+        Picket, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+    )
+    
+    event_type = models.CharField(max_length=30, choices=EventType.choices)
+    description = models.TextField(blank=True, default="")
+    source = models.CharField(max_length=255, blank=True, default="")
+    status = models.CharField(
+        max_length=20, choices=EventStatus.choices, default=EventStatus.OPEN
+    )
+    
+    # Для связи с другими системами
+    related_task = models.ForeignKey(
+        Task, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+    )
+    related_arrival = models.ForeignKey(
+        Arrival, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_events"
+        indexes = [
+            BrinIndex(fields=["occurred_at"]),
+            models.Index(fields=["event_type", "occurred_at"]),
+            models.Index(fields=["status", "occurred_at"]),
+        ]
+        ordering = ["-occurred_at"]
+
+    def __str__(self):
+        return f"{self.event_id} [{self.event_type}] @ {self.occurred_at}"
+
+
+class Forecast(models.Model):
+    """
+    Агрегированный прогноз инцидентов для мобильного приложения.
+    Строится из результатов моделей (таблица ml_predictions).
+    """
+
+    class ForecastType(models.TextChoices):
+        FIRE = "fire", "Пожарный риск"
+        FLOODING = "flooding", "Риск затопления"
+        PREVENTIVE_REPAIR = "preventive-repair", "Необходимость предупредительного ремонта"
+        CHANNEL_FAULT = "channel-fault", "Риск отказа канала"
+        SYSTEM_FAULT = "system-fault", "Риск отказа системы"
+
+    class Period(models.TextChoices):
+        SHORT = "short", "Краткосрочный"
+        LONG = "long", "Долгосрочный"
+
+    forecast_id = models.CharField(max_length=100, unique=True)
+    forecast_type = models.CharField(max_length=50, choices=ForecastType.choices)
+    period = models.CharField(max_length=20, choices=Period.choices)
+    title = models.CharField(max_length=255)
+    
+    # Агрегированные данные по горизонтам (в часах)
+    # Пример: {"6": {"value": 1, "severity": "danger", "nodes": [...]}}
+    horizons = models.JSONField(default=dict)
+    
+    confidence_threshold = models.FloatField(default=0.58)
+    version = models.IntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "mobile_forecasts"
+        indexes = [
+            models.Index(fields=["forecast_type", "updated_at"]),
+        ]
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.forecast_type} v{self.version} @ {self.updated_at}"
+    
