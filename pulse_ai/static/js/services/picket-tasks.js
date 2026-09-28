@@ -1,5 +1,4 @@
 import { dispatcherApiUrl } from './api-url.js';
-import { taskNotification } from './task-notification.js';
 
 export function createTaskSession(startedAt = Date.now()) {
   const seen = new Set();
@@ -23,7 +22,7 @@ export function subscribeToTasks({ onTask, interval = 2000 }) {
     controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await fetch(url, { signal: controller.signal, cache: 'no-store', credentials: 'same-origin', headers: { Accept: 'application/json' } });
       if (!response.ok) throw new Error('Tasks connection failed');
       const { items } = await response.json();
       if (!Array.isArray(items)) throw new Error('Invalid tasks response');
