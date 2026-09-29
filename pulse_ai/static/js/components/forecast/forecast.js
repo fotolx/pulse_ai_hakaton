@@ -1,4 +1,8 @@
-import { forecastPeriods, normalizeForecast, storeForecastSnapshot } from '../../services/forecast.js';
+import { forecastPeriods, normalizeForecast, storeForecastSnapshot, createForecastView } from '../../services/forecast.js?v=forecast-api-6';
+
+export function forecastRowIsDanger(row, period) {
+  return row.id === 'rapid-fire' && period.horizons.some(hour => ['warning', 'danger'].includes(row.horizons[hour]?.severity));
+}
 
 export function mountForecast({ service, onOpenPicket }) {
   const dialog = document.createElement('dialog');
@@ -13,7 +17,8 @@ export function mountForecast({ service, onOpenPicket }) {
   const threshold = dialog.querySelector('.forecast__threshold');
   const lifecycle = new AbortController();
   const chosen = new Set();
-  let request, opener, snapshot, revision = 0;
+  let request, opener, revision = 0;
+  let snapshot = createForecastView(), hasSnapshot = false, message = '';
   let selected = { id: 'fire', hour: 24 };
   const key = (row, node) => JSON.stringify([row.id, node.node, node.picket, node.district]);
   const periodFor = row => forecastPeriods.find(period => period.id === row.period);
@@ -42,7 +47,9 @@ export function mountForecast({ service, onOpenPicket }) {
     const body = table.querySelector('tbody');
     rows.forEach((row, index) => {
       const expanded = selected?.id === row.id;
-      const danger = period.horizons.some(hour => row.horizons[hour]?.severity === 'danger');
+      // По дизайну полная красная плашка зарезервирована только для сценария
+      // быстрого развития пожара. Остальные риски сохраняют обычный фон.
+      const danger = forecastRowIsDanger(row, period);
       const tr = element('tr', `forecast__row${danger ? ' forecast__row--danger' : ''}`);
       tr.append(element('td', 'forecast__number', period.id === 'short' ? index + 1 : index === 0 ? 1 : 3));
       const heading = element('th', 'forecast__label'); heading.scope = 'row';
@@ -81,23 +88,33 @@ export function mountForecast({ service, onOpenPicket }) {
     return table;
   }
   function render() {
-    tables.replaceChildren(); threshold.hidden = false;
-    dialog.querySelector('.forecast__confidence').textContent = snapshot.confidenceThreshold.toFixed(2);
-    status.hidden = snapshot.rows.length > 0; status.textContent = 'Прогнозов пока нет';
+    tables.replaceChildren(); tables.hidden = false; threshold.hidden = !hasSnapshot;
+    dialog.querySelector('.forecast__confidence').textContent = hasSnapshot ? snapshot.confidenceThreshold.toFixed(2) : '';
+    status.hidden = !message; status.textContent = message;
     forecastPeriods.forEach(period => { const table = makeTable(period); if (table) tables.append(table); });
     updateGroups();
   }
   async function refresh() {
     request?.abort(); request = new AbortController(); const current = ++revision;
-    tables.hidden = true; threshold.hidden = true; retry.hidden = true; status.hidden = false; status.textContent = 'Загрузка прогноза…';
+    const currentRequest = request;
+    retry.hidden = true;
+    message = hasSnapshot ? 'Обновление прогноза… Показаны последние загруженные данные.' : 'Загрузка прогноза…';
+    render();
+    const timeout = setTimeout(() => currentRequest.abort(new DOMException('Истекло время ожидания', 'TimeoutError')), 30000);
     try {
       const data = normalizeForecast(await service.load({ signal: request.signal }));
       if (current !== revision || lifecycle.signal.aborted) return;
-      snapshot = storeForecastSnapshot(data); tables.hidden = false; render();
+      snapshot = createForecastView(storeForecastSnapshot(data)); hasSnapshot = true;
+      message = data.rows.length ? '' : 'API пока не вернул прогнозы. «−» — нет данных.';
+      render();
     } catch (error) {
       if (current !== revision || lifecycle.signal.aborted || error.name === 'AbortError') return;
-      status.textContent = 'Не удалось загрузить прогноз. Попробуйте ещё раз.'; retry.hidden = false;
-    }
+      message = hasSnapshot
+        ? 'Не удалось обновить прогноз. Показаны последние загруженные данные. Попробуйте ещё раз.'
+        : 'Не удалось загрузить прогноз. «−» — нет данных. Попробуйте ещё раз.';
+      retry.hidden = false; render();
+      console.warn('Forecast loading failed:', error);
+    } finally { clearTimeout(timeout); }
   }
   const options = { signal: lifecycle.signal };
   dialog.querySelector('.forecast__close').addEventListener('click', () => dialog.close(), options);
@@ -111,11 +128,11 @@ export function mountForecast({ service, onOpenPicket }) {
   // Демонстрационная кнопка намеренно не выполняет сетевых действий.
   dialog.querySelector('[data-action="notify"]').addEventListener('click', event => event.preventDefault(), options);
   dialog.addEventListener('click', event => { if (event.target !== dialog) return; const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close(); }, options);
-  dialog.addEventListener('close', () => { request?.abort(); revision += 1; opener?.focus(); }, options);
+  dialog.addEventListener('close', () => { if (dialog.open) return; request?.abort(); revision += 1; opener?.focus(); }, options);
   return {
     open() { if (dialog.open) return; opener = document.activeElement; dialog.showModal(); dialog.querySelector('h2').focus(); refresh(); },
     refresh,
-    setData(data) { request?.abort(); revision += 1; snapshot = storeForecastSnapshot(data); retry.hidden = true; tables.hidden = false; render(); },
+    setData(data) { request?.abort(); revision += 1; const stored = storeForecastSnapshot(data); snapshot = createForecastView(stored); hasSnapshot = true; message = stored.rows.length ? '' : 'API пока не вернул прогнозы. «−» — нет данных.'; retry.hidden = true; render(); },
     destroy() { request?.abort(); dialog.close(); lifecycle.abort(); dialog.remove(); },
   };
 }
