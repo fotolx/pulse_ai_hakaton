@@ -3,7 +3,7 @@
 .forecast__header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
 .forecast__title { margin: 0; padding-top: 2px; font-size: 16px; line-height: 20px; font-weight: 600; }
 .forecast__title:focus { outline: none; }
-.forecast__threshold { flex-shrink: 0; margin: 0; padding: 1px 3px; border: 1px solid #b8c5cc; border-radius: 3px; color: #a0adb5; font-size: 8px; line-height: 12px; text-transform: uppercase; }
+.forecast__threshold { flex-shrink: 0; margin: 0; padding: 1px 3px; border: 1px solid #b8c5cc; border-radius: 3px; color: #a0adb5; font-size: 8px; line-height: 12px; text-transform: uppercase; margin-right: 40px;}
 .forecast__close { position: absolute; z-index: 1; right: -10px; top: -12px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 4px; background: transparent; color: #71838d; font-size: 24px; line-height: 1; }
 .forecast__close:hover { background: #eef3f7; color: #38596b; }
 .forecast__scroll { overflow-x: auto; }
