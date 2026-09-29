@@ -1,8 +1,9 @@
 """
 Сервис агрегации прогнозов из результатов моделей машинного обучения.
+Оптимизированная версия: пакетная загрузка каналов, ограничение выборки.
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
 
 from django.utils import timezone
@@ -10,138 +11,231 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-# Маппинг моделей на типы прогнозов для мобильного приложения
 MODEL_TO_FORECAST_MAP = {
     "B1": {
         "forecast_type": "fire",
         "period": "short",
         "title": "Пожарный риск",
         "horizons_hours": [1, 6, 24],
+        "entity_field": "picket_key",
     },
     "C1": {
         "forecast_type": "flooding",
         "period": "short",
         "title": "Риск затопления",
         "horizons_hours": [6, 24],
+        "entity_field": "picket_key",
     },
     "A3": {
         "forecast_type": "channel-fault",
         "period": "short",
         "title": "Риск отказа канала",
         "horizons_hours": [24],
+        "entity_field": "channel_key",
     },
     "A4": {
         "forecast_type": "system-fault",
         "period": "short",
         "title": "Риск отказа системы",
         "horizons_hours": [24],
+        "entity_field": "system_key",
     },
     "F1_7d": {
         "forecast_type": "preventive-repair",
         "period": "long",
         "title": "Необходимость предупредительного ремонта",
-        "horizons_hours": [168],  # 7 дней
+        "horizons_hours": [168],
+        "entity_field": "maintenance_unit_key",
     },
     "F1_30d": {
         "forecast_type": "preventive-repair",
         "period": "long",
         "title": "Необходимость предупредительного ремонта",
-        "horizons_hours": [720],  # 30 дней
+        "horizons_hours": [720],
+        "entity_field": "maintenance_unit_key",
     },
 }
+
+# Максимальное число предсказаний для обработки на один горизонт
+MAX_PREDICTIONS_PER_HORIZON = 50
 
 
 class ForecastAggregationService:
     """Сервис агрегации прогнозов из таблицы ml_predictions."""
 
-    DEFAULT_CONFIDENCE_THRESHOLD = 0.58
+    DEFAULT_CONFIDENCE_THRESHOLD = 0.0058
 
-    def get_severity(self, value: int, max_value: int = 3) -> str:
-        """Определение серьёзности прогноза."""
+    def __init__(self):
+        # Кэш каналов загружается один раз за запрос
+        self._channel_cache = None
+
+    def _get_channel_cache(self):
+        """Загружает все каналы одним запросом и строит индексы."""
+        if self._channel_cache is not None:
+            return self._channel_cache
+
+        from ml.models import ChannelKey
+
+        channels = ChannelKey.objects.all().only(
+            "channel_id",
+            "channel_key",
+            "system_key",
+            "picket_key",
+            "maintenance_unit_key",
+            "picket_number",
+            "engineering_system_type",
+        )
+
+        # Строим четыре индекса для быстрого поиска
+        cache = {
+            "by_picket_key": {},
+            "by_channel_key": {},
+            "by_system_key": {},
+            "by_maintenance_unit_key": {},
+        }
+
+        for ch in channels:
+            if ch.picket_key:
+                cache["by_picket_key"][ch.picket_key] = ch
+            if ch.channel_key:
+                cache["by_channel_key"][ch.channel_key] = ch
+            if ch.system_key:
+                # Для систем берём первый попавшийся канал
+                if ch.system_key not in cache["by_system_key"]:
+                    cache["by_system_key"][ch.system_key] = ch
+            if ch.maintenance_unit_key:
+                if ch.maintenance_unit_key not in cache["by_maintenance_unit_key"]:
+                    cache["by_maintenance_unit_key"][ch.maintenance_unit_key] = ch
+
+        self._channel_cache = cache
+        logger.info(
+            f"Загружено каналов: {len(channels)}, "
+            f"пикетов: {len(cache['by_picket_key'])}, "
+            f"систем: {len(cache['by_system_key'])}"
+        )
+        return cache
+
+    def _resolve_picket_info(
+        self, entity_id: str, entity_field: str
+    ) -> Optional[dict]:
+        """Преобразование entity_id в информацию о пикете через кэш."""
+        cache = self._get_channel_cache()
+        entity_id = str(entity_id)
+
+        # Определяем индекс по типу сущности
+        index_key = f"by_{entity_field}"
+        channel = cache.get(index_key, {}).get(entity_id)
+
+        # Fallback: ищем во всех индексах
+        if not channel:
+            for idx in cache.values():
+                channel = idx.get(entity_id)
+                if channel:
+                    break
+
+        if not channel:
+            return None
+
+        # Извлекаем номер пикета
+        picket_id = channel.picket_number
+        if not picket_id and channel.picket_key:
+            parts = channel.picket_key.split("|")
+            picket_id = parts[-1] if len(parts) > 1 else channel.picket_key
+
+        return {
+            "node": picket_id,
+            "picket": picket_id,
+            "district": channel.engineering_system_type or "",
+        }
+
+    def get_severity(self, value: int) -> str:
+        """Определение серьёзности прогноза по числу узлов."""
         if value == 0:
             return "none"
         elif value == 1:
-            return "normal"
-        elif value == 2:
-            return "warning"
-        else:
             return "danger"
+        elif value <= 3:
+            return "normal"
+        else:
+            return "warning"
 
     def aggregate_forecast(
         self,
         model_name: str,
         threshold: Optional[float] = None,
     ) -> dict:
-        """
-        Агрегация прогнозов по модели.
-        
-        Возвращает словарь с горизонтами и пикетами, 
-        где вероятность превышает порог.
-        """
+        """Агрегация прогнозов по модели."""
         from ml.models import MLPrediction
-        from ml.models import ChannelKey
-        
+
         if model_name not in MODEL_TO_FORECAST_MAP:
             raise ValueError(f"Unknown model: {model_name}")
-        
+
         config = MODEL_TO_FORECAST_MAP[model_name]
         threshold = threshold or self.DEFAULT_CONFIDENCE_THRESHOLD
-        
-        horizons = {}
-        
-        # Получаем последние предсказания для каждого горизонта
-        for horizon_hours in config["horizons_hours"]:
-            horizon_key = str(horizon_hours)
-            
-            # Время прогноза: текущий час - горизонт
-            # (так как предсказание делается на будущее)
-            since = timezone.now() - timedelta(hours=horizon_hours)
-            predictions = (
-                MLPrediction.objects
-                .filter(
-                    model_name=model_name,
-                    probability__gte=threshold,
-                    prediction_time__gte=since,
-                )
-                .values("entity_id", "probability")
-                .order_by("-probability")
-            )
-            
-            nodes = []
-            seen_pickets = set()  # Чтобы избежать дублей
+        entity_field = config["entity_field"]
 
-            for pred in predictions:
-                # entity_id может быть в формате "5962|ПК953+7" (picket_key)
-                # или в другом формате — проверяем оба варианта
-                channel = ChannelKey.objects.filter(
-                    picket_key=str(pred.entity_id)
-                ).first()
-                
-                # Если не нашли по picket_key, пробуем по channel_key
-                if not channel:
-                    channel = ChannelKey.objects.filter(
-                        channel_key=str(pred.entity_id)
-                    ).first()
-                
-                if channel and channel.picket_key not in seen_pickets:
-                    seen_pickets.add(channel.picket_key)
-                    
-                    # Формируем идентификатор пикета в формате для мобильного приложения
-                    # Из "5962|ПК953+7" берём только "ПК953+7" (номер пикета)
-                    picket_id = channel.picket_number or channel.picket_key.split("|")[-1]
-                    
-                    nodes.append({
-                        "node": picket_id,
-                        "picket": picket_id,
-                        "district": channel.engineering_system_type,  # или другой источник района
-                    })
-            
-            horizons[horizon_key] = {
-                "value": len(nodes),
-                "severity": self.get_severity(len(nodes)),
-                "nodes": nodes,
+        # Находим последнее время предсказания модели
+        latest_prediction = (
+            MLPrediction.objects
+            .filter(model_name=model_name)
+            .order_by("-prediction_time")
+            .values("prediction_time")
+            .first()
+        )
+
+        if not latest_prediction:
+            logger.warning(f"{model_name}: нет предсказаний в БД")
+            return {
+                "id": config["forecast_type"],
+                "period": config["period"],
+                "title": config["title"],
+                "horizons": {str(h): None for h in [1, 6, 24, 168, 720]},
             }
-        
+
+        base_time = latest_prediction["prediction_time"]
+        horizons = {}
+
+        # ЗАГРУЖАЕМ ВСЕ ПРЕДСКАЗАНИЯ ОДНИМ ЗАПРОСОМ
+        all_predictions = list(
+            MLPrediction.objects
+            .filter(
+                model_name=model_name,
+                probability__gte=threshold,
+                prediction_time=base_time,
+            )
+            .values("entity_id", "probability")
+            .order_by("-probability")
+            [:MAX_PREDICTIONS_PER_HORIZON]
+        )
+
+        logger.info(
+            f"{model_name}: найдено {len(all_predictions)} предсказаний "
+            f"выше порога {threshold} на время {base_time}"
+        )
+
+        # ПРЕОБРАЗУЕМ В УЗЛЫ ОДИН РАЗ (не на каждый горизонт)
+        nodes = []
+        seen_pickets = set()
+
+        for pred in all_predictions:
+            picket_info = self._resolve_picket_info(
+                pred["entity_id"], entity_field
+            )
+            if picket_info and picket_info["picket"] not in seen_pickets:
+                seen_pickets.add(picket_info["picket"])
+                nodes.append(picket_info)
+
+        # ОДИНАКОВЫЙ РЕЗУЛЬТАТ ДЛЯ ВСЕХ ГОРИЗОНТОВ МОДЕЛИ
+        # (так как модель обучена на один горизонт)
+        horizon_data = {
+            "value": len(nodes),
+            "severity": self.get_severity(len(nodes)),
+            "nodes": nodes,
+        }
+
+        for horizon_hours in config["horizons_hours"]:
+            horizons[str(horizon_hours)] = horizon_data
+
         # Для отсутствующих горизонтов возвращаем null
         all_horizons = {}
         for h in [1, 6, 24, 168, 720]:
@@ -149,7 +243,7 @@ class ForecastAggregationService:
                 all_horizons[str(h)] = horizons[str(h)]
             else:
                 all_horizons[str(h)] = None
-        
+
         return {
             "id": config["forecast_type"],
             "period": config["period"],
@@ -158,29 +252,33 @@ class ForecastAggregationService:
         }
 
     def build_forecast_response(self) -> dict:
-        """
-        Построение полного ответа для /api/forecast.
-        """
+        """Построение полного ответа для /api/forecast."""
         from ml.models import MLPrediction
-        
-        # Получаем время последнего обновления прогнозов
-        latest_prediction = MLPrediction.objects.order_by("-created_at").first()
-        updated_at = latest_prediction.created_at if latest_prediction else timezone.now()
-        
+
+        latest_prediction = (
+            MLPrediction.objects.order_by("-created_at").values("created_at").first()
+        )
+        updated_at = (
+            latest_prediction["created_at"]
+            if latest_prediction
+            else timezone.now()
+        )
+
+        # Предзагружаем кэш каналов ДО обработки моделей
+        self._get_channel_cache()
+
         rows = []
-        
-        # Агрегируем все типы прогнозов
+
         for model_name in MODEL_TO_FORECAST_MAP.keys():
             try:
                 forecast_data = self.aggregate_forecast(model_name)
-                
-                # Объединяем прогнозы с одинаковым forecast_type
+
                 existing = next(
-                    (r for r in rows if r["id"] == forecast_data["id"]), None
+                    (r for r in rows if r["id"] == forecast_data["id"]),
+                    None,
                 )
-                
+
                 if existing:
-                    # Объединяем горизонты
                     for horizon_key, horizon_data in forecast_data["horizons"].items():
                         if horizon_data is not None:
                             existing["horizons"][horizon_key] = horizon_data
@@ -189,7 +287,7 @@ class ForecastAggregationService:
             except Exception as e:
                 logger.exception(f"Error aggregating forecast for {model_name}: {e}")
                 continue
-        
+
         return {
             "version": 1,
             "updatedAt": updated_at.strftime("%Y-%m-%dT%H:%M:%S.") + "000Z",
