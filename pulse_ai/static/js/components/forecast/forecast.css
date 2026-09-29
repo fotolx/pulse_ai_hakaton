@@ -1,11 +1,12 @@
 .forecast { box-sizing: border-box; width: 840px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); margin: auto; padding: 20px; overflow-y: auto; border: 1px solid #cbd6dc; border-radius: 8px; background: #fff; color: var(--color-text); box-shadow: 0 10px 28px rgb(0 0 0 / 15%); }
 .forecast::backdrop { background: rgb(15 34 48 / 24%); }
-.forecast__header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+.forecast__header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; min-height: 30px; margin-bottom: 30px; padding-right: 42px; }
 .forecast__title { margin: 0; padding-top: 2px; font-size: 16px; line-height: 20px; font-weight: 600; }
 .forecast__title:focus { outline: none; }
-.forecast__threshold { flex-shrink: 0; margin: 0; padding: 1px 3px; border: 1px solid #b8c5cc; border-radius: 3px; color: #a0adb5; font-size: 8px; line-height: 12px; text-transform: uppercase; margin-right: 40px;}
-.forecast__close { position: absolute; z-index: 1; right: -10px; top: -12px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 4px; background: transparent; color: #71838d; font-size: 24px; line-height: 1; }
+.forecast__threshold { flex-shrink: 0; margin: 0; padding: 1px 3px; border: 1px solid #b8c5cc; border-radius: 3px; color: #a0adb5; font-size: 8px; line-height: 12px; text-transform: uppercase; }
+.forecast__close { position: absolute; z-index: 2; right: 0; top: 0; display: grid; width: 30px; height: 30px; padding: 0; place-items: center; border-radius: 4px; background: transparent; color: #71838d; font-size: 24px; line-height: 1; }
 .forecast__close:hover { background: #eef3f7; color: #38596b; }
+.forecast__close:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .forecast__scroll { overflow-x: auto; }
 .forecast__tables { display: grid; gap: 24px; }
 .forecast__table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; line-height: 20px; }
