@@ -1,6 +1,7 @@
 import { createAlarmToast } from './alarm-toast.js';
-import { arrivalNotification } from '../../services/arrival-notification.js';
-import { taskNotification } from '../../services/task-notification.js';
+import { normalizeServerEventTime } from '../../services/server-event-time.js?v=notification-time-1';
+import { arrivalNotification } from '../../services/arrival-notification.js?v=notification-time-1';
+import { taskNotification } from '../../services/task-notification.js?v=notification-time-1';
 
 export function mountArrivalToasts({ onAccept } = {}) {
   const region = document.createElement('aside');
@@ -17,7 +18,7 @@ export function mountArrivalToasts({ onAccept } = {}) {
       const notification = arrivalNotification(item);
       const toast = createAlarmToast({
         title: notification.title,
-        timeLabel: time.format(new Date(item.arrivedAt)),
+        timeLabel: time.format(new Date(normalizeServerEventTime(item.arrivedAt))),
         description: notification.description,
       });
       toast.classList.add('alarm-toast--arrival');
@@ -39,7 +40,7 @@ export function mountArrivalToasts({ onAccept } = {}) {
       const notification = taskNotification(item);
       const toast = createAlarmToast({
         title: notification.title,
-        timeLabel: time.format(new Date(item.closedAt || Date.now())),
+        timeLabel: time.format(new Date(normalizeServerEventTime(item.closedAt || new Date().toISOString()))),
         description: notification.description,
       });
       toast.classList.add('alarm-toast--arrival');
