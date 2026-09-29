@@ -11,7 +11,7 @@ import pandas as pd
 from django.conf import settings
 
 from pulse_ai.ml.constants import MODEL_REGISTRY
-from pulse_ai.ml.feature_engineering import FeatureEngineeringService
+from pulse_ai.ml.services.feature_engineering import FeatureEngineeringService
 
 logger = logging.getLogger(__name__)
 

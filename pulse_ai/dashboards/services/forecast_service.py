@@ -79,7 +79,7 @@ class ForecastAggregationService:
         где вероятность превышает порог.
         """
         from ml.models import MLPrediction
-        from mobile_api.models import Picket
+        from ml.models import ChannelKey
         
         if model_name not in MODEL_TO_FORECAST_MAP:
             raise ValueError(f"Unknown model: {model_name}")
@@ -95,28 +95,45 @@ class ForecastAggregationService:
             
             # Время прогноза: текущий час - горизонт
             # (так как предсказание делается на будущее)
-            prediction_time = timezone.now() - timedelta(hours=horizon_hours)
-            
-            # Берём предсказания с высокой вероятностью
-            predictions = MLPrediction.objects.filter(
-                model_name=model_name,
-                probability__gte=threshold,
-                prediction_time__gte=prediction_time - timedelta(hours=1),
-                prediction_time__lte=prediction_time + timedelta(hours=1),
-            ).select_related("entity_id")
+            since = timezone.now() - timedelta(hours=horizon_hours)
+            predictions = (
+                MLPrediction.objects
+                .filter(
+                    model_name=model_name,
+                    probability__gte=threshold,
+                    prediction_time__gte=since,
+                )
+                .values("entity_id", "probability")
+                .order_by("-probability")
+            )
             
             nodes = []
+            seen_pickets = set()  # Чтобы избежать дублей
+
             for pred in predictions:
-                # entity_id может быть picket_key или maintenance_unit_key
-                picket = Picket.objects.filter(
-                    picket_id=str(pred.entity_id)
+                # entity_id может быть в формате "5962|ПК953+7" (picket_key)
+                # или в другом формате — проверяем оба варианта
+                channel = ChannelKey.objects.filter(
+                    picket_key=str(pred.entity_id)
                 ).first()
                 
-                if picket:
+                # Если не нашли по picket_key, пробуем по channel_key
+                if not channel:
+                    channel = ChannelKey.objects.filter(
+                        channel_key=str(pred.entity_id)
+                    ).first()
+                
+                if channel and channel.picket_key not in seen_pickets:
+                    seen_pickets.add(channel.picket_key)
+                    
+                    # Формируем идентификатор пикета в формате для мобильного приложения
+                    # Из "5962|ПК953+7" берём только "ПК953+7" (номер пикета)
+                    picket_id = channel.picket_number or channel.picket_key.split("|")[-1]
+                    
                     nodes.append({
-                        "node": picket.picket_id,
-                        "picket": picket.picket_id,
-                        "district": picket.district,
+                        "node": picket_id,
+                        "picket": picket_id,
+                        "district": channel.engineering_system_type,  # или другой источник района
                     })
             
             horizons[horizon_key] = {

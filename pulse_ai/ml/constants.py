@@ -1,92 +1,57 @@
 """
-Справочник признаков моделей.
+Реестр моделей, признаков и констант.
+Источник: model_features_dictionary_2025.csv
 """
+from pathlib import Path
+from django.conf import settings
 
-# Временные окна для скользящих статистик
-ROLLING_WINDOWS = {
-    "1h": "1 hour",
-    "6h": "6 hours",
-    "24h": "24 hours",
-    "72h": "72 hours",
-    "7d": "7 days",
-    "30d": "30 days",
-}
+MODELS_DIR = Path(settings.BASE_DIR) / "ml" / "models"
+DATA_DIR = Path(settings.BASE_DIR) / "data"
 
-# Категории событий (из event_value_dictionary)
-EVENT_CATEGORIES = {
-    "fault": [
-        "Отказ", "Неисправность", "Обрыв", "КЗ", "Ошибка",
-        "Задымление", "Загазованность", "Протечка",
-    ],
-    "warning": [
-        "Внимание", "Предупреждение", "Низкий заряд", "Перегрев",
-    ],
-    "detection": [
-        "Обнаружено движение", "Открыта дверь", "Доступ",
-        "Дым", "Огонь",
-    ],
-    "normal": [
-        "Норма", "Закрыто", "Движения нет", "Есть питание",
-    ],
-}
+# ────────────────────────────────────────────────────────────────
+# Временные окна
+# ────────────────────────────────────────────────────────────────
+_WINDOWS = ["1h", "6h", "24h", "72h", "7d", "30d"]
+_F1_WINDOWS = ["7d", "30d", "90d"]
+_CATEGORIES = ["fault", "warning", "detection", "normal", "unknown"]
 
-# ============================================================
-# A3: признаки отказа канала на 24 часа вперёд (147 признаков)
-# ============================================================
+# ────────────────────────────────────────────────────────────────
+# A3: признаки канала (148 признаков)
+# ────────────────────────────────────────────────────────────────
 A3_FEATURE_COLUMNS = [
-    # --- Активность и тишина ---
     "hours_since_previous_active",
     "silent_hours_before",
-    
-    # --- История эпизодов отказов ---
     "hours_since_last_fault_episode",
-    "fault_episodes_prev_7d",
-    "fault_episodes_prev_30d",
-    "active_fault_flag",
-    
-    # --- Доли пропущенных интервалов ---
-    "missing_interval_share_1h",
-    "missing_interval_share_6h",
-    "missing_interval_share_24h",
-    "missing_interval_share_72h",
-    "missing_interval_share_7d",
-    "missing_interval_share_30d",
-    
-    # --- Счётчики событий по категориям в скользящих окнах ---
-    *[f"{cat}_cat_prev_{window}" 
-      for cat in ["fault", "warning", "detection", "normal"]
-      for window in ["1h", "6h", "24h", "72h", "7d", "30d"]],
-    
-    # --- Тревоги ---
-    *[f"alarm_count_prev_{w}" for w in ["1h", "6h", "24h", "72h", "7d", "30d"]],
-    
-    # --- Переключения оборудования ---
-    "equipment_switch_count_prev_24h",
-    "motion_transition_count_prev_24h",
-    
-    # --- Энтропия значений датчика ---
-    "value_entropy_prev_24h",
-    "value_entropy_prev_7d",
-    
-    # --- Системный контекст (взаимное сравнение с другими каналами) ---
-    "system_event_count_prev_24h",
-    "system_alarm_count_prev_24h",
-    "system_fault_event_count_prev_24h",
-    "system_active_channel_count_prev_24h",
-    "peer_event_ratio_prev_24h",
-    "peer_alarm_ratio_prev_24h",
-    
-    # --- Лаги (точные календарные) ---
-    *[f"event_count_lag_{w}" for w in ["1h", "6h", "24h", "72h", "7d", "30d"]],
-    
-    # --- Флаги тишины ---
-    *[f"silent_prev_{w}_flag" for w in ["1h", "6h", "24h", "72h", "7d", "30d"]],
+    *[f"events_prev_{w}" for w in _WINDOWS],
+    *[f"alarms_prev_{w}" for w in _WINDOWS],
+    *[f"faults_prev_{w}" for w in _WINDOWS],
+    *[f"active_hours_prev_{w}" for w in _WINDOWS],
+    *[f"observable_hours_prev_{w}" for w in _WINDOWS],
+    *[f"missing_interval_share_{w}" for w in _WINDOWS],
+    *[f"equipment_switches_prev_{w}" for w in _WINDOWS],
+    *[f"motion_transitions_prev_{w}" for w in _WINDOWS],
+    *[f"event_category_entropy_prev_{w}" for w in _WINDOWS],
+    *[f"event_intensity_prev_{w}" for w in _WINDOWS],
+    *[f"system_events_prev_{w}" for w in _WINDOWS],
+    *[f"system_alarms_prev_{w}" for w in _WINDOWS],
+    *[f"system_faults_prev_{w}" for w in _WINDOWS],
+    *[f"peer_event_ratio_prev_{w}" for w in _WINDOWS],
+    *[f"system_event_share_prev_{w}" for w in _WINDOWS],
+    *[f"{cat}_cat_prev_{w}" for w in _WINDOWS for cat in _CATEGORIES],
+    *[f"event_count_lag_{w}" for w in _WINDOWS],
+    *[f"alarm_count_lag_{w}" for w in _WINDOWS],
+    *[f"fault_count_lag_{w}" for w in _WINDOWS],
+    *[f"silent_prev_{w}_flag" for w in _WINDOWS],
+    "sensor_type",
 ]
 
-# ============================================================
-# A4: признаки эпизода отказа системы на 24 часа вперёд
-# ============================================================
+# ────────────────────────────────────────────────────────────────
+# A4: признаки системы (30 признаков)
+# ────────────────────────────────────────────────────────────────
 A4_FEATURE_COLUMNS = [
+    *[f"system_events_prev_{w}" for w in _WINDOWS],
+    *[f"system_alarms_prev_{w}" for w in _WINDOWS],
+    *[f"system_faults_prev_{w}" for w in _WINDOWS],
     "power_off_events_prev_24h",
     "pump_on_events_prev_24h",
     "pump_problem_events_prev_24h",
@@ -94,15 +59,28 @@ A4_FEATURE_COLUMNS = [
     "fan_problem_events_prev_24h",
     "cascade_15m_count_prev_24h",
     "max_channels_in_15m_prev_24h",
-    "system_event_count_prev_24h",
-    "system_alarm_count_prev_24h",
-    "system_fault_event_count_prev_24h",
+    "neighbor_events_prev_24h",
+    "neighbor_alarms_prev_24h",
+    "neighbor_faults_prev_24h",
+    "object_id",
+    "system_type",
 ]
 
-# ============================================================
-# B1: признаки пожара на пикете на 24 часа вперёд
-# ============================================================
+# ────────────────────────────────────────────────────────────────
+# B1: признаки пикета (20 признаков)
+# ────────────────────────────────────────────────────────────────
 B1_FEATURE_COLUMNS = [
+    "fire_any_prev_24h",
+    "fire_active_channels_prev_24h",
+    "fire_sensor_types_prev_24h",
+    "fire_multi_channel_prev_24h",
+    "fire_multi_type_prev_24h",
+    "smoke_prev_24h",
+    "smoke_channels_prev_24h",
+    "heat_prev_24h",
+    "heat_channels_prev_24h",
+    "manual_alarm_prev_24h",
+    "manual_alarm_channels_prev_24h",
     "uirr_prev_24h",
     "uirr_channels_prev_24h",
     "fire_last_activity_age_h",
@@ -111,85 +89,154 @@ B1_FEATURE_COLUMNS = [
     "temp_max_prev_24h",
     "temp_min_prev_24h",
     "temp_mean_prev_24h",
+    "temp_max_rise_prev_24h",
 ]
 
-# ============================================================
-# C1: признаки затопления на пикете на 24 часа вперёд
-# ============================================================
+# ────────────────────────────────────────────────────────────────
+# C1: признаки затопления (17 признаков)
+# ────────────────────────────────────────────────────────────────
 C1_FEATURE_COLUMNS = [
+    "has_pump",
+    "has_flood_sensor",
+    "pump_channel_count",
+    "flood_sensor_channel_count",
+    "pump_flood_prev_6h",
+    "pump_flood_prev_24h",
+    "pump_flood_prev_72h",
+    "pump_problem_prev_6h",
+    "pump_problem_prev_24h",
+    "pump_problem_prev_72h",
+    "pump_on_prev_6h",
+    "pump_on_prev_24h",
+    "pump_off_prev_6h",
+    "pump_off_prev_24h",
+    "precipitation_prev_6h",
     "precipitation_prev_12h",
     "precipitation_prev_24h",
-    "flooding_last_activity_age_h",
-    "water_sensor_activity_prev_24h",
 ]
 
-# ============================================================
-# F1: признаки отказа оборудования на 7/30 дней вперёд
-# ============================================================
+# ────────────────────────────────────────────────────────────────
+# D1: признаки эпизода доступа (11 признаков)
+# ────────────────────────────────────────────────────────────────
+D1_FEATURE_COLUMNS = [
+    "log_duration",
+    "log_signal_count",
+    "log_confirming_channels",
+    "hour_sin",
+    "hour_cos",
+    "weekend_flag",
+    "hour_rarity_train",
+    "guard_known_flag",
+    "known_picket_flag",
+    "door_signal_flag",
+    "hatch_signal_flag",
+]
+
+# ────────────────────────────────────────────────────────────────
+# F1: признаки оборудования (77 признаков, одинаковый для 7d и 30d)
+# ────────────────────────────────────────────────────────────────
 F1_FEATURE_COLUMNS = [
-    # История отказов
-    "fault_episodes_prev_7d",
-    "fault_episodes_prev_30d",
-    "fault_episodes_prev_90d",
+    *[f"events_prev_{w}" for w in _F1_WINDOWS],
+    *[f"alarms_prev_{w}" for w in _F1_WINDOWS],
+    *[f"faults_prev_{w}" for w in _F1_WINDOWS],
+    *[f"fault_episodes_prev_{w}" for w in _F1_WINDOWS],
+    *[f"equipment_switches_prev_{w}" for w in _F1_WINDOWS],
+    *[f"motion_transitions_prev_{w}" for w in _F1_WINDOWS],
+    *[f"active_days_prev_{w}" for w in _F1_WINDOWS],
+    *[f"observed_days_prev_{w}" for w in _F1_WINDOWS],
+    *[f"silent_days_prev_{w}" for w in _F1_WINDOWS],
     "days_since_last_fault_episode",
-    # Погода за 7 дней
-    "precipitation_prev_7d",
-    "temperature_mean_prev_7d",
-    "temperature_min_prev_7d",
-    "temperature_max_prev_7d",
-    "humidity_mean_prev_7d",
-    "pressure_mean_prev_7d",
-    "freeze_thaw_days_prev_7d",
-    # Погода за 30 дней
-    "precipitation_prev_30d",
-    "temperature_mean_prev_30d",
-    "temperature_min_prev_30d",
-    "temperature_max_prev_30d",
-    "humidity_mean_prev_30d",
-    "pressure_mean_prev_30d",
-    "freeze_thaw_days_prev_30d",
-    # Погода за 90 дней
-    "precipitation_prev_90d",
-    "temperature_mean_prev_90d",
-    "temperature_min_prev_90d",
-    "temperature_max_prev_90d",
+    *[f"had_fault_prev_{w}" for w in _F1_WINDOWS],
+    *[f"repeated_fault_prev_{w}" for w in _F1_WINDOWS],
+    "system_context_available_flag",
+    *[f"system_events_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_alarms_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_faults_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_fault_episodes_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_active_days_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_avg_faulty_share_prev_{w}" for w in _F1_WINDOWS],
+    *[f"system_avg_silent_share_prev_{w}" for w in _F1_WINDOWS],
+    *[f"precipitation_prev_{w}" for w in _F1_WINDOWS],
+    *[f"temperature_mean_prev_{w}" for w in _F1_WINDOWS],
+    *[f"temperature_min_prev_{w}" for w in _F1_WINDOWS],
+    *[f"temperature_max_prev_{w}" for w in _F1_WINDOWS],
+    *[f"humidity_mean_prev_{w}" for w in _F1_WINDOWS],
+    *[f"pressure_mean_prev_{w}" for w in _F1_WINDOWS],
+    *[f"freeze_thaw_days_prev_{w}" for w in _F1_WINDOWS],
 ]
 
+# ────────────────────────────────────────────────────────────────
+# РЕЕСТР МОДЕЛЕЙ
+# ────────────────────────────────────────────────────────────────
 MODEL_REGISTRY = {
     "A3": {
-        "model_path": "ml/models/a3_catboost_final_2025.cbm",
+        "file": "a3_catboost_final_2025.cbm",
+        "engine": "catboost",
         "features": A3_FEATURE_COLUMNS,
-        "granularity": "channel",  # channel_key × hour
+        "cat_features": ["sensor_type"],
+        "granularity": "channel",
         "horizon_hours": 24,
+        "schedule": "hourly",
     },
     "A4": {
-        "model_path": "ml/models/a4_catboost_final_2025.cbm",
+        "file": "a4_catboost_final_2025.cbm",
+        "engine": "catboost",
         "features": A4_FEATURE_COLUMNS,
-        "granularity": "system",   # system_key × hour
+        "cat_features": ["object_id", "system_type"],
+        "granularity": "system",
         "horizon_hours": 24,
+        "schedule": "hourly",
     },
     "B1": {
-        "model_path": "ml/models/b1_catboost_final_2025.cbm",
+        "file": "b1_catboost_2025.cbm",
+        "engine": "catboost",
         "features": B1_FEATURE_COLUMNS,
-        "granularity": "picket",   # picket_key × hour
-        "horizon_hours": 24,
-    },
-    "C1": {
-        "model_path": "ml/models/c1_catboost_final_2025.cbm",
-        "features": C1_FEATURE_COLUMNS,
+        "cat_features": [],
         "granularity": "picket",
         "horizon_hours": 24,
+        "schedule": "hourly",
+    },
+    "C1": {
+        "file": "c1_catboost_2025.cbm",
+        "engine": "catboost",
+        "features": C1_FEATURE_COLUMNS,
+        "cat_features": [],
+        "granularity": "picket",
+        "horizon_hours": 24,
+        "schedule": "hourly",
+    },
+    "D1": {
+        "file": "d1_isolation_forest_2025.joblib",
+        "engine": "sklearn",
+        "features": D1_FEATURE_COLUMNS,
+        "cat_features": [],
+        "granularity": "episode",
+        "horizon_hours": None,
+        "schedule": "on_event",
     },
     "F1_7d": {
-        "model_path": "ml/models/f1_7d_catboost_final_2025.cbm",
+        "file": "f1_7d_catboost_final_2025.cbm",
+        "engine": "catboost",
         "features": F1_FEATURE_COLUMNS,
-        "granularity": "maintenance_unit",  # maintenance_unit_key × day
+        "cat_features": [],
+        "granularity": "maintenance_unit",
         "horizon_days": 7,
+        "schedule": "daily",
     },
     "F1_30d": {
-        "model_path": "ml/models/f1_30d_catboost_final_2025.cbm",
+        "file": "f1_30d_catboost_final_2025.cbm",
+        "engine": "catboost",
         "features": F1_FEATURE_COLUMNS,
+        "cat_features": [],
         "granularity": "maintenance_unit",
         "horizon_days": 30,
+        "schedule": "daily",
     },
 }
+
+# ────────────────────────────────────────────────────────────────
+# КОНСТАНТЫ
+# ────────────────────────────────────────────────────────────────
+EVENT_CATEGORIES = ["fault", "warning", "detection", "normal", "unknown"]
+FORECAST_CONFIDENCE_THRESHOLD = 0.58
+WEATHER_LOCATION_ID = 1  # Москва

@@ -150,19 +150,15 @@ CELERY_ENABLE_UTC = False            # у вас USE_TZ = False, держите 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 CELERY_BEAT_SCHEDULE = {
-    "hourly-a3-predictions": {
-        "task": "ml.tasks.run_hourly_predictions",
-        "schedule": crontab(minute=5),  # Каждый час в 05 минут
-        "args": ("A3",),
+    "hourly-predictions": {
+        "task": "ml.tasks.run_all_hourly_models",
+        "schedule": crontab(minute=5),
     },
-    "hourly-a4-predictions": {
-        "task": "ml.tasks.run_hourly_predictions",
-        "schedule": crontab(minute=10),
-        "args": ("A4",),
+    "daily-predictions": {
+        "task": "ml.tasks.run_daily_models",
+        "schedule": crontab(hour=2, minute=0),
     },
 }
-
-
 
 CACHES = {
     'default': {
