@@ -1,5 +1,8 @@
+import { normalizeServerEventTime } from './server-event-time.js';
+
 export function taskNotification(item) {
   const date = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', dateStyle: 'short', timeStyle: 'medium' });
+  const createdAt = normalizeServerEventTime(item.closedAt || new Date().toISOString());
   const sensorLabels = {
     door: 'КД Дверь',
     smoke: 'Датчик дыма',
@@ -19,8 +22,8 @@ export function taskNotification(item) {
   return {
     id: `task:${item.id}`,
     title: `Задача закрыта: ${item.nodeName || '№ 107'}`,
-    description: `${item.technicianName} · ${item.position}\n${item.nodeName} · ${item.district}\nРаботы: ${item.task}${statusLine}${commentText}${photosText}\nЗакрыто: ${date.format(new Date(item.closedAt || Date.now()))} (МСК)`,
-    createdAt: item.closedAt || new Date().toISOString(),
+    description: `${item.technicianName} · ${item.position}\n${item.nodeName} · ${item.district}\nРаботы: ${item.task}${statusLine}${commentText}${photosText}\nЗакрыто: ${date.format(new Date(createdAt))} (МСК)`,
+    createdAt,
     severity: 'info',
     readAt: null,
   };
