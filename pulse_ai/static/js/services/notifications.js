@@ -41,6 +41,38 @@ export function createDemoNotificationsService(initialItems = createDemoNotifica
   };
 }
 
+export function createPersistentNotificationsService({
+  initialItems = [],
+  storage = globalThis.localStorage,
+  key = 'collector:notification-center:v1',
+} = {}) {
+  let restored = [];
+  try {
+    const value = storage?.getItem(key);
+    if (value) restored = normalizeNotifications(JSON.parse(value));
+  } catch { /* Corrupt or unavailable storage must not break the application. */ }
+
+  const service = createDemoNotificationsService([...initialItems, ...restored]);
+  function persist() {
+    try { storage?.setItem(key, JSON.stringify(service.snapshot())); }
+    catch { /* The live in-memory notification center still remains available. */ }
+  }
+  return {
+    snapshot: service.snapshot,
+    async list() { return service.list(); },
+    upsert(items) {
+      const changed = service.upsert(items);
+      if (changed) persist();
+      return changed;
+    },
+    async markRead(ids) {
+      const result = await service.markRead(ids);
+      persist();
+      return result;
+    },
+  };
+}
+
 // Предлагаемый контракт API; включается после согласования маршрутов с бэкендом.
 export function createHttpNotificationsService(baseUrl = '/api/notifications') {
   return {
