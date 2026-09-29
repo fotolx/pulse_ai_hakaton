@@ -81,8 +81,8 @@ export default {
         renderRows(data.items); hasData = true;
         count.textContent = data.total > data.items.length ? `${data.items.length} из ${data.total} событий` : `${data.items.length} событий`;
         feedback.textContent = data.total > data.items.length || data.items.length === 500
-          ? 'Показано до 500 событий. Уточните период или фильтры. Обновление каждые 5 секунд.'
-          : 'Данные сервера · обновление каждые 5 секунд';
+          ? 'Показано до 500 событий. Уточните период или фильтры.'
+          : '';
       } catch {
         if (current !== revision || lifecycle.signal.aborted) return;
         feedback.textContent = hasData ? 'Связь с журналом потеряна. Показаны последние загруженные данные.' : '';
