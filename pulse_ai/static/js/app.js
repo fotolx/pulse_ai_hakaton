@@ -9,11 +9,11 @@ import { mountModelSettings } from './components/model-settings/model-settings.j
 import { createDemoForecastService, startForecastSnapshotSync, storeForecastSelection } from './services/forecast.js?v=equipment-demo-forecast-3';
 import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
-import { createDemoNotificationsService } from './services/notifications.js?v=live-events-1';
-import { subscribeToArrivals } from './services/arrivals.js?v=event-baseline-2';
+import { createPersistentNotificationsService } from './services/notifications.js?v=notification-history-1';
+import { subscribeToArrivals } from './services/arrivals.js?v=notification-history-1';
 import { mountArrivalToasts } from './components/alarm-toast/arrival-toasts.js';
 import { arrivalNotification } from './services/arrival-notification.js';
-import { subscribeToTasks } from './services/picket-tasks.js?v=event-baseline-2';
+import { subscribeToTasks } from './services/picket-tasks.js?v=notification-history-1';
 import { taskNotification } from './services/task-notification.js';
 import events from './pages/events.js?v=live-events-1';
 
@@ -50,12 +50,8 @@ const header = mountHeader(document.querySelector('#header-root'), {
     document.querySelector('#notice').showModal();
   },
 });
-// Remove the old browser cache; arrivals now live only in this page instance.
-try {
-  ['collector:notifications', 'collector:arrival-seen', 'collector:arrival-pending'].forEach(key => localStorage.removeItem(key));
-} catch { /* Storage may be unavailable. */ }
-// Only real mobile events populate the notification center.
-const notificationService = createDemoNotificationsService([]);
+// Server snapshots restore the full history; local storage preserves read state in this browser.
+const notificationService = createPersistentNotificationsService();
 const notifications = mountNotifications({
   trigger: document.querySelector('[data-notifications-trigger]'),
   service: notificationService,
@@ -70,6 +66,10 @@ const arrivalToasts = mountArrivalToasts({
   },
 });
 subscribeToArrivals({
+  onSnapshot(items) {
+    notificationService.upsert(items.map(arrivalNotification));
+    notifications.setItems(notificationService.snapshot());
+  },
   onArrival(item) {
     notificationService.upsert([arrivalNotification(item)]);
     notifications.setItems(notificationService.snapshot());
@@ -77,6 +77,10 @@ subscribeToArrivals({
   },
 });
 subscribeToTasks({
+  onSnapshot(items) {
+    notificationService.upsert(items.map(taskNotification));
+    notifications.setItems(notificationService.snapshot());
+  },
   onTask(item) {
     notificationService.upsert([taskNotification(item)]);
     notifications.setItems(notificationService.snapshot());
