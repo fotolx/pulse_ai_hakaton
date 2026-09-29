@@ -11,10 +11,10 @@ import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
 import { createPersistentNotificationsService } from './services/notifications.js?v=notification-history-1';
 import { subscribeToArrivals } from './services/arrivals.js?v=notification-history-1';
-import { mountArrivalToasts } from './components/alarm-toast/arrival-toasts.js';
-import { arrivalNotification } from './services/arrival-notification.js';
+import { mountArrivalToasts } from './components/alarm-toast/arrival-toasts.js?v=notification-time-1';
+import { arrivalNotification } from './services/arrival-notification.js?v=notification-time-1';
 import { subscribeToTasks } from './services/picket-tasks.js?v=notification-history-1';
-import { taskNotification } from './services/task-notification.js';
+import { taskNotification } from './services/task-notification.js?v=notification-time-1';
 import events from './pages/events.js?v=live-events-1';
 
 const handover = mountHandover();
