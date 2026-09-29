@@ -1,4 +1,4 @@
-import { forecastDemo } from '../data/forecast.js?v=equipment-demo-forecast-3';
+import { forecastDemo } from '../data/forecast.js?v=forecast-popup-2';
 
 export const forecastPeriods = [
   { id: 'short', horizons: [1, 6, 24], labels: ['Статус 1ч', 'Статус 6ч', 'Статус 24 ч'] },
