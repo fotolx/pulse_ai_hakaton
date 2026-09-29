@@ -4,9 +4,9 @@ import district from './pages/district.js';
 import pickets from './pages/pickets.js';
 import equipment from './pages/equipment.js?v=equipment-demo-forecast-3';
 import scheme from './pages/scheme.js';
-import { mountForecast } from './components/forecast/forecast.js?v=forecast-popup-2';
+import { mountForecast } from './components/forecast/forecast.js?v=forecast-api-6';
 import { mountModelSettings } from './components/model-settings/model-settings.js';
-import { createDemoForecastService, startForecastSnapshotSync, storeForecastSelection } from './services/forecast.js?v=forecast-popup-2';
+import { createHttpForecastService, startForecastSnapshotSync, storeForecastSelection } from './services/forecast.js?v=forecast-api-6';
 import { mountHandover } from './components/handover/handover.js';
 import { mountNotifications } from './components/notifications/notifications.js';
 import { createPersistentNotificationsService } from './services/notifications.js?v=notification-history-1';
@@ -18,7 +18,7 @@ import { taskNotification } from './services/task-notification.js?v=notification
 import events from './pages/events.js?v=live-events-1';
 
 const handover = mountHandover();
-const forecastService = createDemoForecastService();
+const forecastService = createHttpForecastService();
 // Снимок прогноза обновляется независимо от открытия попапа.
 startForecastSnapshotSync(forecastService, { intervalMs: 15000 });
 const forecast = mountForecast({
