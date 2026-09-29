@@ -27,7 +27,7 @@ export function createTaskSession() {
   };
 }
 
-export function subscribeToTasks({ onTask, interval = 2000 }) {
+export function subscribeToTasks({ onTask, onSnapshot, interval = 2000 }) {
   const url = dispatcherApiUrl('/api/tasks');
   let stopped = false;
   let timer;
@@ -42,6 +42,7 @@ export function subscribeToTasks({ onTask, interval = 2000 }) {
       const { items } = await response.json();
       if (!Array.isArray(items)) throw new Error('Invalid tasks response');
       if (stopped) return;
+      onSnapshot?.(items);
       for (const item of session.unseen(items)) {
         onTask(item);
         session.markSeen(item.id);
