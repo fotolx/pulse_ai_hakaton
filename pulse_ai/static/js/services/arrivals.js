@@ -26,7 +26,7 @@ export function createArrivalSession() {
   };
 }
 
-export function subscribeToArrivals({ onArrival, onConnectionChange, interval = 2000 }) {
+export function subscribeToArrivals({ onArrival, onSnapshot, onConnectionChange, interval = 2000 }) {
   const url = dispatcherApiUrl('/api/arrivals');
   let stopped = false;
   let timer;
@@ -41,6 +41,7 @@ export function subscribeToArrivals({ onArrival, onConnectionChange, interval = 
       const { items } = await response.json();
       if (!Array.isArray(items)) throw new Error('Invalid arrivals');
       if (stopped) return;
+      onSnapshot?.(items);
       for (const item of session.unseen(items)) {
         onArrival(item);
         session.markSeen(item.id);
