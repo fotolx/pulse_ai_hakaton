@@ -12,6 +12,8 @@
 .model-settings__number input::-webkit-inner-spin-button{margin:0;opacity:1}
 .model-settings__number i{right:auto;left:var(--percent-offset,18px);color:#9aa9b1}
 .model-settings__number input:not(:placeholder-shown)+i{display:block}
+.model-settings__number--percent input{padding-right:26px}
+.model-settings__number--percent i{right:20px;left:auto;top:8px}
 .model-settings__number--sensitivity{width:64px}
 .model-settings__number--sensitivity input{padding:0 7px}
 .model-settings__number input:focus,.model-settings__comment textarea:focus,.pulse-auth__input input:focus{border-color:#4dbaf3;background:#fff;outline:none}
