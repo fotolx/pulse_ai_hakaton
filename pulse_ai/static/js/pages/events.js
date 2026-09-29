@@ -85,7 +85,7 @@ export default {
           : 'Данные сервера · обновление каждые 5 секунд';
       } catch {
         if (current !== revision || lifecycle.signal.aborted) return;
-        feedback.textContent = hasData ? 'Связь с журналом потеряна. Показаны последние загруженные данные.' : 'Не удалось загрузить журнал событий. Проверьте соединение и повторите попытку.';
+        feedback.textContent = hasData ? 'Связь с журналом потеряна. Показаны последние загруженные данные.' : '';
         retry.hidden = false;
       } finally {
         clearTimeout(timeout);
